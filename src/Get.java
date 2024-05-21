@@ -4,6 +4,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 @Retention(RetentionPolicy.RUNTIME)
-public @interface AnnotationController {
-    String value() default "Nom controller";
+public @interface Get {
+    String value() default "Nom méthode";
 }
