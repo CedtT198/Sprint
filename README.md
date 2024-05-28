@@ -9,3 +9,5 @@
 - Il faut que l'utilisateur annote ses controllers de l'annotation 'AnnotationController'
 - Il faut que l'utilisateur annote tous les méthodes de ces controllers de l'annotation 'Get' et ajouter une valeur pour chaque méthode
 - Ajouter un url mapping comme valeur de l'annotation
+
+# N.B :  Les fonctions annotés sont tous de type String

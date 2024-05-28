@@ -23,7 +23,6 @@ import AnnotationController.Get;
 import mapping.Mapping;
 import java.util.Set;
 
-import javax.swing.JOptionPane;
 
 public class FrontController extends HttpServlet {
     HashMap<String, Mapping> urlMapping = new HashMap<>();
@@ -95,12 +94,26 @@ public class FrontController extends HttpServlet {
         }
         else {
             Mapping mapping = urlMapping.get(controllerSearched);
-            
-            out.println("<p>" + requestURL.toString() + "</p>");
-            out.println("<p>" + mapping.getClassName() + "</p>");
-            out.println("<p>" + mapping.getMethodName() + "</p>");
+            String methodName = mapping.getMethodName();
+            String className = mapping.getClassName();
+            String test = execMethod(className, methodName);
 
+            out.println("<p>" + requestURL.toString() + "</p>");
+            out.println("<p>" + test + "</p>");
             out.close();
+        }
+    }
+
+    public String execMethod(String className, String methodName) {
+        try {
+            Class<?> c = Class.forName(className);
+            Object instance = c.getDeclaredConstructor().newInstance();        
+            Method method = c.getMethod(methodName);
+            return (String) method.invoke(instance);
+        } catch (Exception e) {
+            System.out.println(e.getMessage())  ;
+            e.printStackTrace();
+            return "";
         }
     }
 
