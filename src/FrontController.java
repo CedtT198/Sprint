@@ -23,7 +23,6 @@ import AnnotationController.Get;
 import mapping.Mapping;
 import java.util.Set;
 
-import javax.swing.JOptionPane;
 
 public class FrontController extends HttpServlet {
     HashMap<String, Mapping> urlMapping = new HashMap<>();
@@ -94,11 +93,12 @@ public class FrontController extends HttpServlet {
             out.println("<p>" + "Il y n'a pas de méthode associée à ce chemin." + "</p>");
         }
         else {
-            Mapping mapping = urlMapping.get(controllerSearched);
-            
             out.println("<p>" + requestURL.toString() + "</p>");
-            out.println("<p>" + mapping.getClassName() + "</p>");
-            out.println("<p>" + mapping.getMethodName() + "</p>");
+
+            Mapping mapping = urlMapping.get(controllerSearched);
+            String methodName = mapping.getMethodName();
+            String className = mapping.getClassName();
+            String test = execMethod(className, methodName);
 
             out.close();
         }
