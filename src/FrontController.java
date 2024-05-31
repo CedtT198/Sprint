@@ -21,6 +21,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import AnnotationController.AnnotationController;
 import AnnotationController.Get;
 import mapping.Mapping;
+import modelandview.ModelAndView;
+
 import java.util.Set;
 
 
@@ -84,7 +86,7 @@ public class FrontController extends HttpServlet {
         StringBuffer requestURL = request.getRequestURL();
         String[] requestUrlSplitted = requestURL.toString().split("/");
         String controllerSearched = requestUrlSplitted[requestUrlSplitted.length-1];
-        // String controllerSearched = requestUrlSplitted[requestUrlSplitted.length-2];
+        String Searched = requestUrlSplitted[requestUrlSplitted.length-2];
         
         PrintWriter out = response.getWriter();
         response.setContentType("text/html");
@@ -96,24 +98,28 @@ public class FrontController extends HttpServlet {
             Mapping mapping = urlMapping.get(controllerSearched);
             String methodName = mapping.getMethodName();
             String className = mapping.getClassName();
-            String test = execMethod(className, methodName);
 
-            out.println("<p>" + requestURL.toString() + "</p>");
-            out.println("<p>" + test + "</p>");
-            out.close();
-        }
-    }
+            try {
+                Class<?> c = Class.forName(className);
+                Object instance = c.getDeclaredConstructor().newInstance();        
+                Method method = c.getMethod(methodName);
+                Object retour = method.invoke(instance);
 
-    public String execMethod(String className, String methodName) {
-        try {
-            Class<?> c = Class.forName(className);
-            Object instance = c.getDeclaredConstructor().newInstance();        
-            Method method = c.getMethod(methodName);
-            return (String) method.invoke(instance);
-        } catch (Exception e) {
-            System.out.println(e.getMessage())  ;
-            e.printStackTrace();
-            return "";
+                if (retour instanceof String)  {
+                    String string = (String) retour;
+                    
+                    // out.println("<p>" + requestURL.toString() + "</p>");
+                    out.println("<p>" + string + "</p>");
+                    out.close();
+                }
+                else if (retour instanceof ModelAndView) {
+
+                }
+
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+                e.printStackTrace();
+            }
         }
     }
 
