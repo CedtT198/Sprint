@@ -1,5 +1,7 @@
 package modelandview;
 
+import java.util.HashMap;
+
 public class ModelAndView {
     String url;
     HashMap<String, Object> data;
@@ -9,8 +11,8 @@ public class ModelAndView {
         this.url = url;
     }
     
-    public void addObject(String name, Object data) {
-        this.data.put(name, data);
+    public void addObject(String name, Object value) {
+        this.data.put(name, value);
     }
     public String getUrl() {
         return url;
