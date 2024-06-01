@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -21,11 +22,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import AnnotationController.AnnotationController;
 import AnnotationController.Get;
 import mapping.Mapping;
-import java.util.Set;
+import modelandview.ModelAndView;
 
 
 public class FrontController extends HttpServlet {
-    HashMap<String, Mapping> urlMapping = new HashMap<>();
+    private HashMap<String, Mapping> urlMapping = new HashMap<>();
     private String packageNames;
     private List<String> controllerNames = new ArrayList<>();
   
@@ -53,6 +54,7 @@ public class FrontController extends HttpServlet {
                             {
                                 controllerNames.add(clazz.getSimpleName());
                                 this.getMethodInController(className);
+
                             }
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -62,7 +64,6 @@ public class FrontController extends HttpServlet {
             e.printStackTrace();
         }
     }
-
 
     public void getMethodInController(String className) throws Exception {
         Class<?> clazz = Class.forName(className);
@@ -83,37 +84,55 @@ public class FrontController extends HttpServlet {
     protected void processRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         StringBuffer requestURL = request.getRequestURL();
         String[] requestUrlSplitted = requestURL.toString().split("/");
-        String controllerSearched = requestUrlSplitted[requestUrlSplitted.length-1];
-        // String controllerSearched = requestUrlSplitted[requestUrlSplitted.length-2];
+        String methodSearched = requestUrlSplitted[requestUrlSplitted.length-1];
         
         PrintWriter out = response.getWriter();
         response.setContentType("text/html");
 
-        if (!urlMapping.containsKey(controllerSearched)) {
-            out.println("<p>" + "Il y n'a pas de méthode associée à ce chemin." + "</p>");
+        if (!urlMapping.containsKey(methodSearched)) {
+            out.println("<p>Aucune méthode associe a ce chemin.</p>");
         }
         else {
-            Mapping mapping = urlMapping.get(controllerSearched);
+            Mapping mapping = urlMapping.get(methodSearched);
             String methodName = mapping.getMethodName();
             String className = mapping.getClassName();
-            String test = execMethod(className, methodName);
-
-            out.println("<p>" + requestURL.toString() + "</p>");
-            out.println("<p>" + test + "</p>");
-            out.close();
+            
+            executeMethod(out, request, response, methodName, className);
         }
     }
 
-    public String execMethod(String className, String methodName) {
+    public void executeMethod(PrintWriter out, HttpServletRequest request, HttpServletResponse response, String methodName, String className) {
         try {
             Class<?> c = Class.forName(className);
             Object instance = c.getDeclaredConstructor().newInstance();        
             Method method = c.getMethod(methodName);
-            return (String) method.invoke(instance);
+            Object retour = method.invoke(instance);
+
+            if (retour instanceof String)  {
+                String string = (String) retour;                
+                out.println("<p>" + string + "</p>");
+            }
+            else if (retour instanceof ModelAndView) {
+                ModelAndView m = (ModelAndView) retour;
+
+                for (HashMap.Entry<String, Object> data : m.getData().entrySet()) {
+                    String name = data.getKey();
+                    Object value = data.getValue();
+
+                    request.setAttribute(name, value);
+                }
+
+                RequestDispatcher dispatcher = request.getRequestDispatcher(m.getUrl());
+                dispatcher.forward(request, response);
+            }
+            else {
+                out.println("<p>Type de retour non reconnu.</p>");
+            }
+            out.close();
+
         } catch (Exception e) {
-            System.out.println(e.getMessage())  ;
+            System.out.println(e.getMessage());
             e.printStackTrace();
-            return "";
         }
     }
 

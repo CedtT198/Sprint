@@ -20,4 +20,12 @@ if exist "%destinationDir%\" (
 
 rem supprimer le répertoire temporaire
 rmdir /s /q "%tempPath%"
+@REM pause
+
+
+@REM Appel du script du déploiement de l'application test
+cd %destinationDir%
+cd ..
+call deploy.bat
+
 pause
