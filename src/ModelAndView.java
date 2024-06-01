@@ -6,9 +6,13 @@ public class ModelAndView {
     String url;
     HashMap<String, Object> data;
     
-    public ModelAndView() {}
+    public ModelAndView() {
+        this.url = "";
+        this.data = new HashMap<>();
+    }
     public ModelAndView(String url) {
         this.url = url;
+        this.data = new HashMap<>();
     }
     
     public void addObject(String name, Object value) {

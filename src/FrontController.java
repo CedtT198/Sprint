@@ -24,8 +24,6 @@ import AnnotationController.Get;
 import mapping.Mapping;
 import modelandview.ModelAndView;
 
-// import java.util.Set;
-
 
 public class FrontController extends HttpServlet {
     private HashMap<String, Mapping> urlMapping = new HashMap<>();
@@ -37,10 +35,6 @@ public class FrontController extends HttpServlet {
         super.init(config);
         packageNames = config.getInitParameter("controllerPackage");
         scanControllers(packageNames);
-        
-        for (String key : urlMapping.keySet()) {
-            System.out.println("Clé: " + key);
-        }
     }
 
     
@@ -91,25 +85,19 @@ public class FrontController extends HttpServlet {
         StringBuffer requestURL = request.getRequestURL();
         String[] requestUrlSplitted = requestURL.toString().split("/");
         String methodSearched = requestUrlSplitted[requestUrlSplitted.length-1];
-        String controllerSearched = requestUrlSplitted[requestUrlSplitted.length-2];
         
         PrintWriter out = response.getWriter();
         response.setContentType("text/html");
 
-        if (!controllerNames.contains(controllerSearched)) {
-            out.println("<p>" + "Controller "+controllerSearched+" inexistant, verifier la syntaxe." + "</p>");
+        if (!urlMapping.containsKey(methodSearched)) {
+            out.println("<p>Aucune méthode associe a ce chemin.</p>");
         }
         else {
-            if (!checkMethodController(urlMapping, methodSearched, "Controller."+controllerSearched)) {
-                out.println("<p>" + "Aucune méthode "+methodSearched+" associee à ce controller." + "</p>");
-            }
-            else {
-                Mapping mapping = urlMapping.get(methodSearched);
-                String methodName = mapping.getMethodName();
-                String className = mapping.getClassName();
-
-                executeMethod(out, request, response, methodName, className);
-            }
+            Mapping mapping = urlMapping.get(methodSearched);
+            String methodName = mapping.getMethodName();
+            String className = mapping.getClassName();
+            
+            executeMethod(out, request, response, methodName, className);
         }
     }
 
@@ -123,7 +111,6 @@ public class FrontController extends HttpServlet {
             if (retour instanceof String)  {
                 String string = (String) retour;                
                 out.println("<p>" + string + "</p>");
-                out.close();
             }
             else if (retour instanceof ModelAndView) {
                 ModelAndView m = (ModelAndView) retour;
@@ -135,24 +122,18 @@ public class FrontController extends HttpServlet {
                     request.setAttribute(name, value);
                 }
 
-                RequestDispatcher dispatcher = request.getRequestDispatcher(m.getUrl());
+                RequestDispatcher dispatcher = request.getRequestDispatcher("views/jsp/"+m.getUrl());
                 dispatcher.forward(request, response);
             }
+            else {
+                out.println("<p>Type de retour non reconnu.</p>");
+            }
+            out.close();
 
         } catch (Exception e) {
             System.out.println(e.getMessage());
             e.printStackTrace();
         }
-    }
-    
-    public boolean checkMethodController(HashMap<String, Mapping> urlMapping, String methodName, String className) {
-        for (HashMap.Entry<String, Mapping> u : urlMapping.entrySet()) {
-            Mapping m = u.getValue();
-            if (m.getClassName().equals(className) && m.getMethodName().equals(methodName)) {
-                return true;
-            }
-        }
-        return false;
     }
 
 
