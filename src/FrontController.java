@@ -122,7 +122,7 @@ public class FrontController extends HttpServlet {
                     request.setAttribute(name, value);
                 }
 
-                RequestDispatcher dispatcher = request.getRequestDispatcher("views/jsp/"+m.getUrl());
+                RequestDispatcher dispatcher = request.getRequestDispatcher(m.getUrl());
                 dispatcher.forward(request, response);
             }
             else {
