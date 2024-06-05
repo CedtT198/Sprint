@@ -29,12 +29,27 @@ public class FrontController extends HttpServlet {
     private HashMap<String, Mapping> urlMapping = new HashMap<>();
     private String packageNames;
     private List<String> controllerNames = new ArrayList<>();
+    private List<String> errorList = new ArrayList<>();
   
     @Override
-    public void init(ServletConfig config) throws ServletException {
-        super.init(config);
-        packageNames = config.getInitParameter("controllerPackage");
-        scanControllers(packageNames);
+    public void init(ServletConfig config) {
+        try {
+            super.init(config);
+            packageNames = config.getInitParameter("controllerPackage");
+            packageNames.isEmpty();
+            scanControllers(packageNames);
+        } catch (Exception e) {
+            StackTraceElement[] stackTrace = e.getStackTrace();
+            if (stackTrace.length > 0) {
+                StackTraceElement element = stackTrace[0];
+                String error = "ERROR : Package "+packageNames+" introuvable.\nFaute de nom, ou le package est non existant.\n";
+                error += "Sur la ligne : "+element.getLineNumber()+"\n";
+                error += "Dans la classe : "+element.getClassName()+"\n";
+                error += "Fonction : "+element.getMethodName();
+
+                errorList.add(error);
+            }
+        }
     }
 
     
@@ -54,13 +69,18 @@ public class FrontController extends HttpServlet {
                             {
                                 controllerNames.add(clazz.getSimpleName());
                                 this.getMethodInController(className);
-
                             }
                         } catch (Exception e) {
+                            System.out.println("OK1");
                             e.printStackTrace();
                         }
                     });
+            if (controllerNames.size() < 0) {
+                String error = "ERROR : Classe(s) introuvable(s).\nAucun controller n'a été trouvé dans le package : '"+packageNames+"'. Ajouter vos controllers annoté de la classe AnnotationController.AnnotationController.";
+                errorList.add(error);
+            }
         } catch (Exception e) {
+            System.out.println("OK2");
             e.printStackTrace();
         }
     }
@@ -68,6 +88,17 @@ public class FrontController extends HttpServlet {
     public void getMethodInController(String className) throws Exception {
         Class<?> clazz = Class.forName(className);
         Method[] methods = clazz.getDeclaredMethods();
+
+        for (Method m : methods) {
+            for (Method m2 : methods) {
+                String mname = m.getAnnotation(Get.class).value();
+                String m2name = m2.getAnnotation(Get.class).value();
+                if (mname == m2name) {
+                    String error = "ERROR : Valeur des annotations similaires.\nGet(value=\""+mname+"\") revient deux fois. La valeur de l'annotation de chaque controller doit être unique.";
+                    errorList.add(error);
+                }
+            }
+        }
 
         for (Method method : methods) {
             if (method.isAnnotationPresent(Get.class)) {
@@ -99,6 +130,13 @@ public class FrontController extends HttpServlet {
             
             executeMethod(out, request, response, methodName, className);
         }
+
+        if (errorList.size() > 0) {
+            request.setAttribute("list_error", errorList);
+            errorList = new ArrayList<>();
+            RequestDispatcher dispatcher = request.getRequestDispatcher("error.jsp");
+            dispatcher.forward(request, response);
+        }
     }
 
     public void executeMethod(PrintWriter out, HttpServletRequest request, HttpServletResponse response, String methodName, String className) {
@@ -126,7 +164,8 @@ public class FrontController extends HttpServlet {
                 dispatcher.forward(request, response);
             }
             else {
-                out.println("<p>Type de retour non reconnu.</p>");
+                String error = "ERROR : Type de retour non reconnu.\nLe type de retour d'une fonction doit obligatoirement etre de type java.lang.String ou modelandview.ModelAndView.";
+                errorList.add(error);
             }
             out.close();
 
