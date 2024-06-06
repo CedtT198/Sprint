@@ -89,6 +89,17 @@ public class FrontController extends HttpServlet {
         Class<?> clazz = Class.forName(className);
         Method[] methods = clazz.getDeclaredMethods();
 
+        for (Method m : methods) {
+            for (Method m2 : methods) {
+                String mname = m.getAnnotation(Get.class).value();
+                String m2name = m2.getAnnotation(Get.class).value();
+                if (mname == m2name) {
+                    String error = "ERROR : Valeur des annotations similaires.\nGet(value=\""+mname+"\") revient deux fois. La valeur de l'annotation de chaque controller doit être unique.";
+                    errorList.add(error);
+                }
+            }
+        }
+
         for (Method method : methods) {
             if (method.isAnnotationPresent(Get.class)) {
                 Mapping mapping = new Mapping(className, method.getName());
