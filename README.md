@@ -9,5 +9,4 @@
 - Attention! Tous les controleurs doivent être dans un package du nom 'Controller'
 - Il faut que l'utilisateur annote ses controllers de l'annotation 'AnnotationController'
 - Il faut que l'utilisateur annote toutes les méthodes de ces controllers de l'annotation 'Get' et ajouter une valeur pour chaque méthode (valeur unique obligatoire)
-
-# N.B :  Actuellement, toutes les fonctions annotés sont seulement de type String ou ModelAndView
+- Toutes les fonctions annotés doivent être de type String ou ModelAndView seulement
