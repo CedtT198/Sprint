@@ -7,8 +7,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Parameter;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +33,7 @@ public class FrontController extends HttpServlet {
     private String packageNames;
     private List<String> controllerNames = new ArrayList<>();
     private List<String> errorList = new ArrayList<>();
+    private Reflect r = new Reflect();
   
     @Override
     public void init(ServletConfig config) {
@@ -89,13 +93,21 @@ public class FrontController extends HttpServlet {
         Class<?> clazz = Class.forName(className);
         Method[] methods = clazz.getDeclaredMethods();
 
-        for (Method m : methods) {
-            for (Method m2 : methods) {
-                String mname = m.getAnnotation(Get.class).value();
-                String m2name = m2.getAnnotation(Get.class).value();
-                if (mname == m2name) {
-                    String error = "ERROR : Valeur des annotations similaires.\nGet(value=\""+mname+"\") revient deux fois. La valeur de l'annotation de chaque controller doit être unique.";
-                    errorList.add(error);
+        for (int i=0; i < methods.length; i++) {
+            for (int j=0; j < methods.length; j++) {
+                if (i == j) {
+                    continue;
+                }
+                else {
+                    if (methods[i].isAnnotationPresent(Get.class) && methods[j].isAnnotationPresent(Get.class)) {
+                        String mname = methods[i].getAnnotation(Get.class).value();
+                        String m2name = methods[j].getAnnotation(Get.class).value();
+                        if (mname == m2name) {
+                            String error = "ERROR : Valeur des annotations similaires.\nGet(value=\""+mname+"\") revient plusieurs fois. La valeur de l'annotation de chaque controller doit être unique.";
+                            errorList.add(error);
+                            break;
+                        }
+                    }
                 }
             }
         }
@@ -111,70 +123,113 @@ public class FrontController extends HttpServlet {
         }
     }
 
-
     protected void processRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        StringBuffer requestURL = request.getRequestURL();
-        String[] requestUrlSplitted = requestURL.toString().split("/");
-        String methodSearched = requestUrlSplitted[requestUrlSplitted.length-1];
-        
-        PrintWriter out = response.getWriter();
-        response.setContentType("text/html");
-
-        if (!urlMapping.containsKey(methodSearched)) {
-            out.println("<p>Aucune méthode associe a ce chemin.</p>");
-        }
-        else {
-            Mapping mapping = urlMapping.get(methodSearched);
-            String methodName = mapping.getMethodName();
-            String className = mapping.getClassName();
-            
-            executeMethod(out, request, response, methodName, className);
-        }
-
-        if (errorList.size() > 0) {
-            request.setAttribute("list_error", errorList);
-            errorList = new ArrayList<>();
-            RequestDispatcher dispatcher = request.getRequestDispatcher("error.jsp");
-            dispatcher.forward(request, response);
-        }
-    }
-
-    public void executeMethod(PrintWriter out, HttpServletRequest request, HttpServletResponse response, String methodName, String className) {
         try {
-            Class<?> c = Class.forName(className);
-            Object instance = c.getDeclaredConstructor().newInstance();        
-            Method method = c.getMethod(methodName);
-            Object retour = method.invoke(instance);
+            StringBuffer requestURL = request.getRequestURL();
+            String[] requestUrlSplitted = requestURL.toString().split("/");
+            String[] param = r.getArgs(request);
 
-            if (retour instanceof String)  {
-                String string = (String) retour;                
-                out.println("<p>" + string + "</p>");
-            }
-            else if (retour instanceof ModelAndView) {
-                ModelAndView m = (ModelAndView) retour;
+            String methodSearched = requestUrlSplitted[requestUrlSplitted.length-1];
+            
+            PrintWriter out = response.getWriter();
+            response.setContentType("text/html");
 
-                for (HashMap.Entry<String, Object> data : m.getData().entrySet()) {
-                    String name = data.getKey();
-                    Object value = data.getValue();
-
-                    request.setAttribute(name, value);
-                }
-
-                RequestDispatcher dispatcher = request.getRequestDispatcher(m.getUrl());
+            if (!urlMapping.containsKey(methodSearched)) {
+                // out.println("<p>Aucune méthode associe a ce chemin.</p>");
+                RequestDispatcher dispatcher = request.getRequestDispatcher("accueil.jsp");
                 dispatcher.forward(request, response);
             }
             else {
-                String error = "ERROR : Type de retour non reconnu.\nLe type de retour d'une fonction doit obligatoirement etre de type java.lang.String ou modelandview.ModelAndView.";
-                errorList.add(error);
+                Mapping mapping = urlMapping.get(methodSearched);
+                String methodName = mapping.getMethodName();
+                String className = mapping.getClassName();
+                
+                executeMethod(out, request, response, methodName, className, param);
             }
-            out.close();
 
-        } catch (Exception e) {
+            if (errorList.size() > 0) {
+                request.setAttribute("list_error", errorList);
+                errorList = new ArrayList<>();
+                RequestDispatcher dispatcher = request.getRequestDispatcher("error.jsp");
+                dispatcher.forward(request, response);
+            }
+        }
+        catch (Exception e) {
             System.out.println(e.getMessage());
             e.printStackTrace();
         }
     }
+    
+    public void executeMethod(PrintWriter out, HttpServletRequest request, HttpServletResponse response, String methodName, String className, String[] param) throws Exception {
+        Class<?> c = Class.forName(className);
+        Object retour = invokeMethod(c, methodName, param);
 
+        if (retour instanceof String)  {
+            String string = (String) retour;                
+            out.println("<p>" + string + "</p>");
+        }
+        else if (retour instanceof ModelAndView) {
+            ModelAndView m = (ModelAndView) retour;
+
+            for (HashMap.Entry<String, Object> data : m.getData().entrySet()) {
+                String name = data.getKey();
+                Object value = data.getValue();
+
+                request.setAttribute(name, value);
+            }
+
+            RequestDispatcher dispatcher = request.getRequestDispatcher(m.getUrl());
+            dispatcher.forward(request, response);
+        }
+        else {
+            String error = "ERROR : Type de retour non reconnu.\nLe type de retour d'une fonction doit obligatoirement etre de type java.lang.String ou modelandview.ModelAndView.";
+            errorList.add(error);
+        }
+        out.close();
+    }
+
+    public Object invokeMethod(Class<?> c, String methodName, String[] param) throws Exception {
+        Object instance = c.getDeclaredConstructor().newInstance();        
+        Method method = null;
+        Object[] argsToInvoke = null;
+
+        if (param != null) {
+            Class<?>[] paramTypes = new Class<?>[param.length];
+            for (int i = 0; i < param.length; i++) {
+                paramTypes[i] = String.class;
+            }
+            method = c.getMethod(methodName, paramTypes);
+            method.setAccessible(true);
+
+            if (method == null) {
+                String error = "ERROR.\nMéthode "+ methodName +" non trouvée.";
+                errorList.add(error);
+                // throw new NoSuchMethodException("Méthode " + methodName + " non trouvée");
+            }
+
+            argsToInvoke = new Object[param.length];
+            for (int i = 0; i < param.length; i++) {
+                argsToInvoke[i] = param[i];
+            }
+            if (argsToInvoke.length != paramTypes.length) {
+                String error = "ERROR : Erreur d'arguments.\nLe nombre d'arguments ne correspond pas au nombre de paramètres.";
+                errorList.add(error);
+                // throw new IllegalArgumentException("Le nombre d'arguments ne correspond pas au nombre de paramètres");
+            }
+        }
+
+        // Ty raha ohatra ka tsy de type string daholy le paramèetres
+        // for (int i = 0; i < argsToInvoke.length; i++) {
+        //     if (!parameterTypes[i].isInstance(argsToInvoke[i])) {
+        //         String error = "ERROR : Argument invalide.\nLe type de l'argument \" + i + \" ne correspond pas au type du paramètre.";
+        //         errorList.add(error);
+        //         // throw new IllegalArgumentException("Le type de l'argument " + i + " ne correspond pas au type du paramètre");
+        //     }
+        // }
+        
+        Object result = method.invoke(instance, argsToInvoke);
+        return result;
+    }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {

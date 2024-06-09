@@ -10,3 +10,4 @@
 - Il faut que l'utilisateur annote ses controllers de l'annotation 'AnnotationController'
 - Il faut que l'utilisateur annote toutes les méthodes de ces controllers de l'annotation 'Get' avec une valeur unique pour chaque méthode
 - Toutes les fonctions annotés doivent être de type String ou ModelAndView seulement
+- Les paramètres des méthodes de vos controllers doivent être de type String
