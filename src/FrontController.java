@@ -127,7 +127,6 @@ public class FrontController extends HttpServlet {
         try {
             StringBuffer requestURL = request.getRequestURL();
             String[] requestUrlSplitted = requestURL.toString().split("/");
-            String[] param = r.getArgs(request);
 
             String methodSearched = requestUrlSplitted[requestUrlSplitted.length-1];
             
@@ -144,7 +143,7 @@ public class FrontController extends HttpServlet {
                 String methodName = mapping.getMethodName();
                 String className = mapping.getClassName();
                 
-                executeMethod(out, request, response, methodName, className, param);
+                executeMethod(out, request, response, methodName, className);
             }
 
             if (errorList.size() > 0) {
@@ -160,9 +159,9 @@ public class FrontController extends HttpServlet {
         }
     }
     
-    public void executeMethod(PrintWriter out, HttpServletRequest request, HttpServletResponse response, String methodName, String className, String[] param) throws Exception {
+    public void executeMethod(PrintWriter out, HttpServletRequest request, HttpServletResponse response, String methodName, String className) throws Exception {
         Class<?> c = Class.forName(className);
-        Object retour = invokeMethod(c, methodName, param);
+        Object retour = invokeMethod(c, methodName, request);
 
         if (retour instanceof String)  {
             String string = (String) retour;                
@@ -188,46 +187,16 @@ public class FrontController extends HttpServlet {
         out.close();
     }
 
-    public Object invokeMethod(Class<?> c, String methodName, String[] param) throws Exception {
+    public Object invokeMethod(Class<?> c, String methodName, HttpServletRequest request) throws Exception {
         Object instance = c.getDeclaredConstructor().newInstance();        
-        Method method = null;
-        Object[] argsToInvoke = null;
+        Method method = Reflect.findMethodInClass(c, methodName);
 
-        if (param != null) {
-            Class<?>[] paramTypes = new Class<?>[param.length];
-            for (int i = 0; i < param.length; i++) {
-                paramTypes[i] = String.class;
-            }
-            method = c.getMethod(methodName, paramTypes);
-            method.setAccessible(true);
-
-            if (method == null) {
-                String error = "ERROR.\nMéthode "+ methodName +" non trouvée.";
-                errorList.add(error);
-                // throw new NoSuchMethodException("Méthode " + methodName + " non trouvée");
-            }
-
-            argsToInvoke = new Object[param.length];
-            for (int i = 0; i < param.length; i++) {
-                argsToInvoke[i] = param[i];
-            }
-            if (argsToInvoke.length != paramTypes.length) {
-                String error = "ERROR : Erreur d'arguments.\nLe nombre d'arguments ne correspond pas au nombre de paramètres.";
-                errorList.add(error);
-                // throw new IllegalArgumentException("Le nombre d'arguments ne correspond pas au nombre de paramètres");
-            }
+        Object result = null;
+        if (method != null) {
+            Object[] parameters = Reflect.extractParameters(request, method);
+            result = method.invoke(instance, parameters);
         }
-
-        // Ty raha ohatra ka tsy de type string daholy le paramèetres
-        // for (int i = 0; i < argsToInvoke.length; i++) {
-        //     if (!parameterTypes[i].isInstance(argsToInvoke[i])) {
-        //         String error = "ERROR : Argument invalide.\nLe type de l'argument \" + i + \" ne correspond pas au type du paramètre.";
-        //         errorList.add(error);
-        //         // throw new IllegalArgumentException("Le type de l'argument " + i + " ne correspond pas au type du paramètre");
-        //     }
-        // }
         
-        Object result = method.invoke(instance, argsToInvoke);
         return result;
     }
 

@@ -1,56 +1,48 @@
 package mg.prom16.controller;
 
-import jakarta.servlet.ServletException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
+import AnnotationController.RequestParam;
 import jakarta.servlet.http.HttpServletRequest;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 
-public class Reflect
-{
-    public Reflect() {}
-
-    public String[] getArgs(HttpServletRequest request) throws ServletException, IOException {
-        String[] param;
-
-        Map<String, String[]> parameterMap = request.getParameterMap();
-        if (parameterMap.size() <= 0) {
-            param = null;
-            System.out.println("Tsy misy");
+public class Reflect {
+    public static Method findMethodInClass(Class<?> clazz, String methodName) {
+        for (Method method : clazz.getMethods()) {
+            if (method.getName().equals(methodName)) {
+                return method;
+            }
         }
-        else {
-            param = new String[parameterMap.size()];
+        return null;
+    }
 
-            List<String[]> valuesList = new ArrayList<>(parameterMap.values());
-            for (int i = 0; i < valuesList.size(); i++) {
-                String values = valuesList.get(i)[0];
-                param[i] = values;
-                System.out.println("Values = " + values);
+    public static Object convertParameter(String value, Class<?> type) {
+        Object object = null;
+        if (type == String.class) {
+            object = value;
+        } else if (type == int.class || type == Integer.class) {
+            object = Integer.parseInt(value);
+        } else if (type == long.class || type == Long.class) {
+            object = Long.parseLong(value);
+        } else if (type == boolean.class || type == Boolean.class) {
+            object = Boolean.parseBoolean(value);
+        }
+        return object;
+    }
+
+    public static Object[] extractParameters(HttpServletRequest request, Method method) {
+        Parameter[] parameters = method.getParameters();
+        Object[] args = new Object[parameters.length];
+
+        for (int i = 0; i < parameters.length; i++) {
+            Parameter parameter = parameters[i];
+            RequestParam annotation = parameter.getAnnotation(RequestParam.class);
+            if (annotation != null) {
+                String paramName = annotation.value(); 
+                String paramValue = request.getParameter(paramName); 
+                args[i] = convertParameter(paramValue, parameter.getType()); 
             }
         }
 
-        return param;
-    }   
-
-    public String[] getArgs(String requestURL) throws URISyntaxException {
-        URI uri = new URI(requestURL);
-        String query = uri.getQuery();
-        if (query == null) {
-            return null;
-        }
-
-        String[] pairs = query.split("&");
-        String[] param = new String[pairs.length];
-
-        for (int i = 0; i < pairs.length; i++) {
-            String[] keyValue = pairs[i].split("=");
-            param[i] = keyValue.length > 1 ? keyValue[1] : "";
-        }
-
-        return param;
-    }   
+        return args;
+    }
 }
