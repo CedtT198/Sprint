@@ -22,8 +22,8 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import AnnotationController.AnnotationController;
-import AnnotationController.Get;
+import Annotation.Controller;
+import Annotation.Get;
 import mapping.Mapping;
 import modelandview.ModelAndView;
 
@@ -69,7 +69,7 @@ public class FrontController extends HttpServlet {
                         String className = packageName + "." + f.getFileName().toString().replace(".class", "");
                         try {
                             Class<?> clazz = Class.forName(className);
-                            if (clazz.isAnnotationPresent(AnnotationController.class) && !Modifier.isAbstract(clazz.getModifiers()))
+                            if (clazz.isAnnotationPresent(Controller.class) && !Modifier.isAbstract(clazz.getModifiers()))
                             {
                                 controllerNames.add(clazz.getSimpleName());
                                 this.getMethodInController(className);

@@ -2,7 +2,9 @@ package mg.prom16.controller;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
-import AnnotationController.RequestParam;
+import com.thoughtworks.paranamer.AdaptiveParanamer;
+import com.thoughtworks.paranamer.Paranamer;
+import Annotation.RequestParam;
 import jakarta.servlet.http.HttpServletRequest;
 
 public class Reflect {
@@ -14,35 +16,76 @@ public class Reflect {
         }
         return null;
     }
+    
+    public static Object[] extractParameters(HttpServletRequest request, Method method) {
+        Parameter[] parameters = method.getParameters();
+        Object[] args = new Object[parameters.length];
+
+        if (!thereIsAnnotation(method)) {
+            args = getParameters(request, method, parameters, args);
+        }
+        else {
+            args = getParamWithParanamer(request, method, args);
+        }
+
+        return args;
+    }
+
+    public static Object[] getParamWithParanamer(HttpServletRequest request, Method method, Object[] args) {
+        Paranamer paranamer = new AdaptiveParanamer();
+        String[] parameterNames = paranamer.lookupParameterNames(method);
+        Class<?>[] parameterTypes = method.getParameterTypes();
+
+       for (int i = 0; i < parameterNames.length; i++) {
+            String paramName = parameterNames[i];            
+            String paramValue = request.getParameter(paramName); 
+            args[i] = convertParameter(paramValue, parameterTypes[i]); 
+        }
+        return args;
+    }
+
+    public static Object[] getParameters(HttpServletRequest request, Method method, Parameter[] parameters, Object[] args) {
+        for (int i = 0; i < parameters.length; i++) {
+            Parameter parameter = parameters[i];
+            RequestParam annotation = parameter.getAnnotation(RequestParam.class);
+            
+            String paramName = annotation.value(); 
+            String paramValue = request.getParameter(paramName); 
+            args[i] = convertParameter(paramValue, parameter.getType()); 
+        }
+
+        return args;
+    }
 
     public static Object convertParameter(String value, Class<?> type) {
         Object object = null;
         if (type == String.class) {
             object = value;
-        } else if (type == int.class || type == Integer.class) {
+        }
+        else if (type == int.class || type == Integer.class) {
             object = Integer.parseInt(value);
-        } else if (type == long.class || type == Long.class) {
+        }
+        else if (type == long.class || type == Long.class) {
             object = Long.parseLong(value);
-        } else if (type == boolean.class || type == Boolean.class) {
+        }
+        else if (type == boolean.class || type == Boolean.class) {
             object = Boolean.parseBoolean(value);
         }
         return object;
     }
 
-    public static Object[] extractParameters(HttpServletRequest request, Method method) {
+    public static boolean thereIsAnnotation(Method method) {
         Parameter[] parameters = method.getParameters();
         Object[] args = new Object[parameters.length];
 
-        for (int i = 0; i < parameters.length; i++) {
-            Parameter parameter = parameters[i];
+        for (Parameter parameter : parameters) {
             RequestParam annotation = parameter.getAnnotation(RequestParam.class);
-            if (annotation != null) {
-                String paramName = annotation.value(); 
-                String paramValue = request.getParameter(paramName); 
-                args[i] = convertParameter(paramValue, parameter.getType()); 
+            
+            if (annotation == null) {
+                return false;
             }
         }
 
-        return args;
+        return true;
     }
 }
