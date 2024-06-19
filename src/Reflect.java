@@ -27,7 +27,6 @@ public class Reflect {
         else {
             args = getParamWithParanamer(request, method, args);
         }
-
         return args;
     }
 
@@ -65,11 +64,17 @@ public class Reflect {
         else if (type == int.class || type == Integer.class) {
             object = Integer.parseInt(value);
         }
-        else if (type == long.class || type == Long.class) {
-            object = Long.parseLong(value);
+        else if (type == float.class || type == Float.class) {
+            object = Float.parseFloat(value);
+        }
+        else if (type == double.class || type == Double.class) {
+            object = Double.parseDouble(value);
         }
         else if (type == boolean.class || type == Boolean.class) {
             object = Boolean.parseBoolean(value);
+        }
+        else {
+            object = getObjectValue(request, value, type);
         }
         return object;
     }
@@ -85,7 +90,6 @@ public class Reflect {
                 return false;
             }
         }
-
         return true;
     }
 }
