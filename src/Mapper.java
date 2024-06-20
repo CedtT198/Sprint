@@ -1,5 +1,6 @@
 package util;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -8,7 +9,6 @@ import com.thoughtworks.paranamer.Paranamer;
 import Annotation.RequestMapping;
 import Annotation.RequestField;
 import Annotation.RequestParam;
-import jakarta.servlet.http.HttpServletRequest;
 
 public class Mapper {
 
@@ -22,47 +22,86 @@ public class Mapper {
     }
     
     public static Object[] extractParameters(HttpServletRequest request, Method method) throws Exception {
-        Parameter[] parameters = method.getParameters();
-        Object[] args = new Object[parameters.length];
-
-        if (!thereIsAnnotation(method)) {
-            args = getParameters(request, method, parameters, args);
-        }
-        else {
-            args = getParamWithParanamer(request, method, args);
-        }
-        return args;
-    }
-
-    public static Object[] getParamWithParanamer(HttpServletRequest request, Method method, Object[] args) throws Exception {
-        Paranamer paranamer = new AdaptiveParanamer();
-        String[] parameterNames = paranamer.lookupParameterNames(method);
-        Class<?>[] parameterTypes = method.getParameterTypes();
-
-       for (int i = 0; i < parameterNames.length; i++) {
-            String paramName = parameterNames[i];            
-            System.out.println(paramName);
-            String paramValue = request.getParameter(paramName); 
-            args[i] = convertParameter(paramValue, request, parameterTypes[i]); 
-        }
-        return args;
-    }
-
-    public static Object[] getParameters(HttpServletRequest request, Method method, Parameter[] parameters, Object[] args) throws Exception {
+        Parameter[] parameters = method.getParameters();  
+        Object[] args = new Object[parameters.length];    
+    
         for (int i = 0; i < parameters.length; i++) {
             Parameter parameter = parameters[i];
-            RequestParam annotation = parameter.getAnnotation(RequestParam.class);
-            
-            String paramName = annotation.value();
-            System.out.println(paramName);
-            String paramValue = request.getParameter(paramName); 
-            args[i] = convertParameter(paramValue, request, parameter.getType()); 
-        }
 
-        return args;
+            if (parameter.isAnnotationPresent(RequestParam.class)) {
+                RequestParam annotation = parameter.getAnnotation(RequestParam.class); 
+                String paramName = annotation.value();  
+                String paramValue = request.getParameter(paramName);  
+                args[i] = convertParameter(paramValue, parameter.getType()); 
+            } 
+
+            else if (parameter.isAnnotationPresent(RequestMapping.class)) {
+                Class<?> parameterType = parameter.getType();  
+                Object parameterObject = parameterType.getDeclaredConstructor().newInstance();  
+    
+                for (Field field : parameterType.getDeclaredFields()) {
+                    String fieldName = field.getName();  
+                    String paramName = parameterType.getSimpleName().toLowerCase() + "." + fieldName;  
+                    String paramValue = request.getParameter(paramName);  
+
+                    if (paramValue != null) {
+                        Object convertedValue = convertParameter(paramValue, field.getType());  
+                        
+                        System.out.println(convertedValue);
+                        
+                        String setterName = "set" + Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1);
+                        Method setter = parameterType.getMethod(setterName, field.getType()); 
+                        setter.invoke(parameterObject, convertedValue);  
+                    }
+                }
+                args[i] = parameterObject;  
+            }
+        }
+        return args; 
     }
 
-    public static Object convertParameter(String value, HttpServletRequest request, Class<?> type) throws Exception {
+    // public static Object[] extractParameters(HttpServletRequest request, Method method) throws Exception {
+    //     Parameter[] parameters = method.getParameters();
+    //     Object[] args = new Object[parameters.length];
+
+    //     if (!thereIsAnnotation(method)) {
+    //         args = getParameters(request, method, parameters, args);
+    //     }
+    //     else {
+    //         args = getParamWithParanamer(request, method, args);
+    //     }
+    //     return args;
+    // }
+
+    // public static Object[] getParamWithParanamer(HttpServletRequest request, Method method, Object[] args) throws Exception {
+    //     Paranamer paranamer = new AdaptiveParanamer();
+    //     String[] parameterNames = paranamer.lookupParameterNames(method);
+    //     Class<?>[] parameterTypes = method.getParameterTypes();
+
+    //    for (int i = 0; i < parameterNames.length; i++) {
+    //         String paramName = parameterNames[i];            
+    //         System.out.println(paramName);
+    //         String paramValue = request.getParameter(paramName); 
+    //         args[i] = convertParameter(paramValue, parameterTypes[i]); 
+    //     }
+    //     return args;
+    // }
+
+    // public static Object[] getParameters(HttpServletRequest request, Method method, Parameter[] parameters, Object[] args) throws Exception {
+    //     for (int i = 0; i < parameters.length; i++) {
+    //         Parameter parameter = parameters[i];
+    //         RequestParam annotation = parameter.getAnnotation(RequestParam.class);
+            
+    //         String paramName = annotation.value();
+    //         System.out.println(paramName);
+    //         String paramValue = request.getParameter(paramName); 
+    //         args[i] = convertParameter(paramValue, request, parameter.getType()); 
+    //     }
+
+    //     return args;
+    // }
+
+    public static Object convertParameter(String value, Class<?> type) throws Exception {
         Object object = null;
         if (value == null) {
             return null;
@@ -82,35 +121,9 @@ public class Mapper {
         else if (type == boolean.class || type == Boolean.class) {
             object = Boolean.parseBoolean(value);
         }
-        else if (!type.isPrimitive()) {
-            return mapRequestToObject(request, type); 
-        }
         return object;
     }
     
-    public static <T> T mapRequestToObject(HttpServletRequest request, Class<T> clazz) throws Exception {
-        T obj = clazz.getDeclaredConstructor().newInstance();
-
-        if (clazz.isAnnotationPresent(RequestMapping.class)) {
-            Field[] fields = clazz.getDeclaredFields();
-
-            for (Field field : fields) {
-                String paramName = field.getName();
-                if (field.isAnnotationPresent(RequestField.class)) {
-                    RequestField annotation = field.getAnnotation(RequestField.class);
-                    if (!annotation.value().isEmpty()) {
-                        paramName = annotation.value();
-                    }
-                }
-
-                String paramValue = request.getParameter(paramName);
-                field.setAccessible(true);
-                field.set(obj, convertParameter(paramValue, request, field.getType()));
-            }
-        }
-        return obj;
-    }
-
     public static boolean thereIsAnnotation(Method method) {
         Parameter[] parameters = method.getParameters();
         Object[] args = new Object[parameters.length];

@@ -14,3 +14,4 @@
 - Pour les passages de données via un formulaire, vous avez 2 choix :
     - Annoter les paramètres des méthodes de l'annotation "Annotation.RequestParam"
     - Mettre un objet en paramètre des méthodes et annoter la classe de cet objet  et ses attributs de "Annotation.Model" et de "Annotation.Field"
+- 
