@@ -22,10 +22,11 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import AnnotationController.AnnotationController;
-import AnnotationController.Get;
+import Annotation.Get;
+import Annotation.Controller;
 import mapping.Mapping;
-import modelandview.ModelAndView;
+import util.Mapper;
+import util.ModelAndView;
 
 
 public class FrontController extends HttpServlet {
@@ -33,7 +34,6 @@ public class FrontController extends HttpServlet {
     private String packageNames;
     private List<String> controllerNames = new ArrayList<>();
     private List<String> errorList = new ArrayList<>();
-    private Reflect r = new Reflect();
   
     @Override
     public void init(ServletConfig config) {
@@ -69,7 +69,7 @@ public class FrontController extends HttpServlet {
                         String className = packageName + "." + f.getFileName().toString().replace(".class", "");
                         try {
                             Class<?> clazz = Class.forName(className);
-                            if (clazz.isAnnotationPresent(AnnotationController.class) && !Modifier.isAbstract(clazz.getModifiers()))
+                            if (clazz.isAnnotationPresent(Controller.class) && !Modifier.isAbstract(clazz.getModifiers()))
                             {
                                 controllerNames.add(clazz.getSimpleName());
                                 this.getMethodInController(className);
@@ -189,11 +189,11 @@ public class FrontController extends HttpServlet {
 
     public Object invokeMethod(Class<?> c, String methodName, HttpServletRequest request) throws Exception {
         Object instance = c.getDeclaredConstructor().newInstance();        
-        Method method = Reflect.findMethodInClass(c, methodName);
+        Method method = Mapper.findMethodInClass(c, methodName);
 
         Object result = null;
         if (method != null) {
-            Object[] parameters = Reflect.extractParameters(request, method);
+            Object[] parameters = Mapper.extractParameters(request, method);
             result = method.invoke(instance, parameters);
         }
         

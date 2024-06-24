@@ -6,7 +6,7 @@ set "tempPath=temp"
 set "jarFile=spring-ced.jar"
 set "destinationDir=C:\ITU\S4\Web dynamique\Sprint et test framework\Test sprint1"
 
-javac -cp lib/* -d "%tempPath%" "%projectPath%\src\*.java"
+javac -g -cp ".;lib/*" -d "%tempPath%" "%projectPath%\src\*.java"
 jar cvf "%tempPath%\%jarFile%" -C "%tempPath%" .
 
 rem Vérifier si le répertoire de destination existe
@@ -19,12 +19,10 @@ if exist "%destinationDir%\" (
 )
 
 copy "%projectPath%\error.jsp" "%destinationDir%\"
-
+copy "%projectPath%\lib\paranamer-2.8.jar" "%destinationDir%\lib\"
 
 rem supprimer le répertoire temporaire
 rmdir /s /q "%tempPath%"
-@REM pause
-
 
 @REM Appel du script du déploiement de l'application test
 cd %destinationDir%
