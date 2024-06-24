@@ -27,9 +27,7 @@ public class Mapper {
 
         // Pour l'usage de paranamer raha tsy misy annotation le paramètre anle fonction
         Paranamer paranamer = new AdaptiveParanamer();
-        System.out.println("Method name : "+method.getName());
         String[] parameterNames = paranamer.lookupParameterNames(method);
-        System.out.println("Method Parameters : "+parameterNames);
         Class<?>[] parameterTypes = method.getParameterTypes();
     
         for (int i = 0; i < parameters.length; i++) {
