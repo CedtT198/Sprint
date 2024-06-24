@@ -24,6 +24,13 @@ public class Mapper {
     public static Object[] extractParameters(HttpServletRequest request, Method method) throws Exception {
         Parameter[] parameters = method.getParameters();  
         Object[] args = new Object[parameters.length];    
+
+        // Pour l'usage de paranamer raha tsy misy annotation le paramètre anle fonction
+        Paranamer paranamer = new AdaptiveParanamer();
+        System.out.println("Method name : "+method.getName());
+        String[] parameterNames = paranamer.lookupParameterNames(method);
+        System.out.println("Method Parameters : "+parameterNames);
+        Class<?>[] parameterTypes = method.getParameterTypes();
     
         for (int i = 0; i < parameters.length; i++) {
             Parameter parameter = parameters[i];
@@ -55,6 +62,12 @@ public class Mapper {
                     }
                 }
                 args[i] = parameterObject;  
+            }
+            else {
+                String paramName = parameterNames[i];
+                System.out.println(paramName);
+                String paramValue = request.getParameter(paramName); 
+                args[i] = convertParameter(paramValue, parameterTypes[i]); 
             }
         }
         return args; 
