@@ -152,8 +152,7 @@ public class FrontController extends HttpServlet {
                 RequestDispatcher dispatcher = request.getRequestDispatcher("error.jsp");
                 dispatcher.forward(request, response);
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             System.out.println(e.getMessage());
             e.printStackTrace();
         }
@@ -161,30 +160,37 @@ public class FrontController extends HttpServlet {
     
     public void executeMethod(PrintWriter out, HttpServletRequest request, HttpServletResponse response, String methodName, String className) throws Exception {
         Class<?> c = Class.forName(className);
-        Object retour = invokeMethod(c, methodName, request);
-
-        if (retour instanceof String)  {
-            String string = (String) retour;                
-            out.println("<p>" + string + "</p>");
-        }
-        else if (retour instanceof ModelAndView) {
-            ModelAndView m = (ModelAndView) retour;
-
-            for (HashMap.Entry<String, Object> data : m.getData().entrySet()) {
-                String name = data.getKey();
-                Object value = data.getValue();
-
-                request.setAttribute(name, value);
+        try {
+            Object retour = invokeMethod(c, methodName, request);
+    
+            if (retour instanceof String)  {
+                String string = (String) retour;                
+                out.println("<p>" + string + "</p>");
             }
-
-            RequestDispatcher dispatcher = request.getRequestDispatcher(m.getUrl());
-            dispatcher.forward(request, response);
+            else if (retour instanceof ModelAndView) {
+                ModelAndView m = (ModelAndView) retour;
+    
+                for (HashMap.Entry<String, Object> data : m.getData().entrySet()) {
+                    String name = data.getKey();
+                    Object value = data.getValue();
+    
+                    request.setAttribute(name, value);
+                }
+    
+                RequestDispatcher dispatcher = request.getRequestDispatcher(m.getUrl());
+                dispatcher.forward(request, response);
+            }
+            else {
+                String error = "ERROR : Type de retour non reconnu.\nLe type de retour d'une fonction doit obligatoirement etre de type java.lang.String ou modelandview.ModelAndView.";
+                errorList.add(error);
+            }
+        } catch (Exception e) {
+            String error = "ETU 002715 - ERROR : "+e.getMessage();
+            out.println("<p>" + error + "</p>");
         }
-        else {
-            String error = "ERROR : Type de retour non reconnu.\nLe type de retour d'une fonction doit obligatoirement etre de type java.lang.String ou modelandview.ModelAndView.";
-            errorList.add(error);
+        finally {
+            out.close();
         }
-        out.close();
     }
 
     public Object invokeMethod(Class<?> c, String methodName, HttpServletRequest request) throws Exception {

@@ -23,12 +23,14 @@ public class Mapper {
     
     public static Object[] extractParameters(HttpServletRequest request, Method method) throws Exception {
         Parameter[] parameters = method.getParameters();  
-        Object[] args = new Object[parameters.length];    
+        // checkAnnotedParameter(parameters);
+
+        Object[] args = new Object[parameters.length];
 
         // Pour l'usage de paranamer raha tsy misy annotation le paramètre anle fonction
-        Paranamer paranamer = new AdaptiveParanamer();
-        String[] parameterNames = paranamer.lookupParameterNames(method);
-        Class<?>[] parameterTypes = method.getParameterTypes();
+        // Paranamer paranamer = new AdaptiveParanamer();
+        // String[] parameterNames = paranamer.lookupParameterNames(method);
+        // Class<?>[] parameterTypes = method.getParameterTypes();
     
         for (int i = 0; i < parameters.length; i++) {
             Parameter parameter = parameters[i];
@@ -39,7 +41,6 @@ public class Mapper {
                 String paramValue = request.getParameter(paramName);  
                 args[i] = convertParameter(paramValue, parameter.getType()); 
             } 
-
             else if (parameter.isAnnotationPresent(RequestMapping.class)) {
                 Class<?> parameterType = parameter.getType();  
                 Object parameterObject = parameterType.getDeclaredConstructor().newInstance();  
@@ -62,14 +63,23 @@ public class Mapper {
                 args[i] = parameterObject;  
             }
             else {
-                String paramName = parameterNames[i];
-                System.out.println(paramName);
-                String paramValue = request.getParameter(paramName); 
-                args[i] = convertParameter(paramValue, parameterTypes[i]); 
+                throw new Exception("Touts les arguments d'une méthode doivent être annoté de Annotation.RequestParam");
+                // String paramName = parameterNames[i];
+                // System.out.println(paramName);
+                // String paramValue = request.getParameter(paramName); 
+                // args[i] = convertParameter(paramValue, parameterTypes[i]); 
             }
         }
         return args; 
     }
+
+    // public static void checkAnnotedParameter(Parameter[] parameters) throws Exception {
+    //     for (Parameter parameter : parameters) {
+    //         if (parameter.isAnnotationPresent(RequestParam.class)) {
+    //             throw new Exception("Touts les arguments d'une méthode doivent être annoté de Annotation.RequestParam");
+    //         }
+    //     }
+    // }
 
     // public static Object[] extractParameters(HttpServletRequest request, Method method) throws Exception {
     //     Parameter[] parameters = method.getParameters();
