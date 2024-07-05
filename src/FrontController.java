@@ -135,7 +135,7 @@ public class FrontController extends HttpServlet {
 
             if (!urlMapping.containsKey(methodSearched)) {
                 // out.println("<p>Aucune méthode associe a ce chemin.</p>");
-                RequestDispatcher dispatcher = request.getRequestDispatcher("accueil.jsp");
+                RequestDispatcher dispatcher = request.getRequestDispatcher("login.jsp");
                 dispatcher.forward(request, response);
             }
             else {
