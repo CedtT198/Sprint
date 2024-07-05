@@ -1,6 +1,8 @@
 package util;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import util.MySession;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -63,7 +65,18 @@ public class Mapper {
                 args[i] = parameterObject;  
             }
             else {
-                throw new Exception("Touts les arguments d'une méthode doivent être annoté de Annotation.RequestParam");
+                if (parameter.getType() ==  MySession.class) {
+                    HttpSession session = request.getSession();
+                    MySession mySession = new MySession(session);
+                    args[i] = mySession;
+
+                    System.out.println("----------------------------------------\n");
+                    System.out.println("OKKKKKKKKKKKKKKKKKKKKKKKKKKK");
+                    System.out.println("----------------------------------------\n");
+                }
+                else {
+                    throw new Exception("Touts les arguments d'une méthode doivent être annoté de Annotation.RequestParam ou doivent être de type util.MySession si non annoté.");
+                }
                 // String paramName = parameterNames[i];
                 // System.out.println(paramName);
                 // String paramValue = request.getParameter(paramName); 
