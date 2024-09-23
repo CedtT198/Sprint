@@ -4,7 +4,7 @@
 set "projectPath=."
 set "tempPath=temp"
 set "jarFile=spring-ced.jar"
-set "destinationDir=C:\ITU\S4\Web dynamique\Sprint et test framework\Test sprint1"
+set "destinationDir=C:\ITU\S5\Framework\Test sprint"
 
 javac -g -cp ".;lib/*" -d "%tempPath%" "%projectPath%\src\*.java"
 jar cvf "%tempPath%\%jarFile%" -C "%tempPath%" .

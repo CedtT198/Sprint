@@ -1,5 +1,6 @@
 package mg.prom16.controller;
 
+import com.google.gson.Gson;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
@@ -164,21 +165,32 @@ public class FrontController extends HttpServlet {
             Object retour = invokeMethod(c, methodName, request);
     
             if (retour instanceof String)  {
-                String string = (String) retour;                
-                out.println("<p>" + string + "</p>");
+                String string = (String) retour;
+                
+                Gson gson = new Gson();
+                String json = gson.toJson(string);
+ 
+                response.setContentType("text/json");
+                out.println(json);
+                // out.println("<p>" + string + "</p>");
             }
             else if (retour instanceof ModelAndView) {
                 ModelAndView m = (ModelAndView) retour;
     
-                for (HashMap.Entry<String, Object> data : m.getData().entrySet()) {
+                for (HashMap.Entry<String, Object> data : m.getData().entrySet()) { 
                     String name = data.getKey();
                     Object value = data.getValue();
     
                     request.setAttribute(name, value);
                 }
+                String json = gson.toJson(m.getData());
+                    
+                response.setContentType("text/json");
+                out.println(json);
+
     
-                RequestDispatcher dispatcher = request.getRequestDispatcher(m.getUrl());
-                dispatcher.forward(request, response);
+                // RequestDispatcher dispatcher = request.getRequestDispatcher(m.getUrl());
+                // dispatcher.forward(request, response);
             }
             else {
                 String error = "ERROR : Type de retour non reconnu.\nLe type de retour d'une fonction doit obligatoirement etre de type java.lang.String ou modelandview.ModelAndView.";
