@@ -16,4 +16,6 @@
     - Mettre un objet en paramètre des méthodes et annoter la classe de cet objet  et ses attributs de "Annotation.Model" et de "Annotation.Field"
 - Pour l'utilisation de Session, ajouter util.MySession aux paramètres de la méthode
 
-<!-- Ligne 138 tokony soloina anaranle page index -->
+N.B :
+- Ligne 138 tokony soloina anaranle page index
+- build.bat : choisir ligne 11 ou 14 pour compilation en fonction de la version du JDK
