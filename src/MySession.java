@@ -1,6 +1,6 @@
 package util;
 
-import jakarta.servlet.http.HttpSession;
+import javax.servlet.http.HttpSession;
 
 public class MySession {
     HttpSession session;

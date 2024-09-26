@@ -16,13 +16,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import jakarta.servlet.RequestDispatcher;
-import jakarta.servlet.ServletConfig;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import Annotation.Get;
 import Annotation.Controller;
 import mapping.Mapping;
@@ -164,10 +164,10 @@ public class FrontController extends HttpServlet {
         try {
             Object retour = invokeMethod(c, methodName, request);
     
+            Gson gson = new Gson();
             if (retour instanceof String)  {
                 String string = (String) retour;
                 
-                Gson gson = new Gson();
                 String json = gson.toJson(string);
  
                 response.setContentType("text/json");
