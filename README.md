@@ -17,3 +17,4 @@
 - Pour l'utilisation de Session, ajouter util.MySession aux paramètres de la méthode
 
 <!-- Ligne 138 tokony soloina anaranle page index -->
+<!-- Choisir ligne 11 ou 14 "build.bat" pour compilation en fonction de la version de votre JDK -->
