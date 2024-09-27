@@ -163,7 +163,11 @@ public class FrontController extends HttpServlet {
     public void executeMethod(PrintWriter out, HttpServletRequest request, HttpServletResponse response, String methodName, String className) throws Exception {
         Class<?> c = Class.forName(className);
         try {
-            Object retour = invokeMethod(c, methodName, request);
+            Object[] retourArray = invokeMethod(c, methodName, request);
+            Object retour = retourArray[0];
+            boolean rest = (boolean) retourArray[1];
+
+
             String string = "";
             ModelAndView m = null;
     
@@ -175,7 +179,6 @@ public class FrontController extends HttpServlet {
                 string = (String) retour;
                 json = gson.toJson(string);
             }
-
             else if (retour instanceof ModelAndView) {
                 m = (ModelAndView) retour;
     
@@ -192,7 +195,6 @@ public class FrontController extends HttpServlet {
                 errorList.add(error);
             }
 
-            boolean rest = false;
             if (rest) out.println(json);
             else {
                 if (retour instanceof String)  out.println("<p>" + string + "</p>");
@@ -210,19 +212,18 @@ public class FrontController extends HttpServlet {
         }
     }
 
-    public Object invokeMethod(Class<?> c, String methodName, HttpServletRequest request) throws Exception {
+    public Object[] invokeMethod(Class<?> c, String methodName, HttpServletRequest request) throws Exception {
         Object instance = c.getDeclaredConstructor().newInstance();        
         Method method = Mapper.findMethodInClass(c, methodName);
 
-        Object result = null;
+        Object[] result = new Object[2];
         if (method != null) {
             Object[] parameters = Mapper.extractParameters(request, method);
-            result = method.invoke(instance, parameters);
+            result[0] = method.invoke(instance, parameters);
         }
 
-        if (method.isAnnotationPresent(Restapi.class)) {
-            
-        }
+        if (method.isAnnotationPresent(Restapi.class)) result[1] = true;
+        else result[1] = false;
         
         return result;
     }
