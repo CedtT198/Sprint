@@ -16,15 +16,16 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import Annotation.Get;
 import Annotation.Controller;
+import Annotation.Restapi;
 import mapping.Mapping;
 import util.Mapper;
 import util.ModelAndView;
@@ -162,20 +163,24 @@ public class FrontController extends HttpServlet {
     public void executeMethod(PrintWriter out, HttpServletRequest request, HttpServletResponse response, String methodName, String className) throws Exception {
         Class<?> c = Class.forName(className);
         try {
-            Object retour = invokeMethod(c, methodName, request);
+            Object[] retourArray = invokeMethod(c, methodName, request);
+            Object retour = retourArray[0];
+            boolean rest = (boolean) retourArray[1];
+
+
+            String string = "";
+            ModelAndView m = null;
     
             Gson gson = new Gson();
-            if (retour instanceof String)  {
-                String string = (String) retour;
-                
-                String json = gson.toJson(string);
- 
-                response.setContentType("text/json");
-                out.println(json);
-                // out.println("<p>" + string + "</p>");
+            response.setContentType("text/json");
+            String json = "";
+
+            if (retour instanceof String) {
+                string = (String) retour;
+                json = gson.toJson(string);
             }
             else if (retour instanceof ModelAndView) {
-                ModelAndView m = (ModelAndView) retour;
+                m = (ModelAndView) retour;
     
                 for (HashMap.Entry<String, Object> data : m.getData().entrySet()) { 
                     String name = data.getKey();
@@ -183,18 +188,20 @@ public class FrontController extends HttpServlet {
     
                     request.setAttribute(name, value);
                 }
-                String json = gson.toJson(m.getData());
-                    
-                response.setContentType("text/json");
-                out.println(json);
-
-    
-                // RequestDispatcher dispatcher = request.getRequestDispatcher(m.getUrl());
-                // dispatcher.forward(request, response);
+                json = gson.toJson(m.getData());
             }
             else {
                 String error = "ERROR : Type de retour non reconnu.\nLe type de retour d'une fonction doit obligatoirement etre de type java.lang.String ou modelandview.ModelAndView.";
                 errorList.add(error);
+            }
+
+            if (rest) out.println(json);
+            else {
+                if (retour instanceof String)  out.println("<p>" + string + "</p>");
+                else {
+                    RequestDispatcher dispatcher = request.getRequestDispatcher(m.getUrl());
+                    dispatcher.forward(request, response);
+                }
             }
         } catch (Exception e) {
             String error = "ETU 002715 - ERROR : "+e.getMessage();
@@ -205,15 +212,18 @@ public class FrontController extends HttpServlet {
         }
     }
 
-    public Object invokeMethod(Class<?> c, String methodName, HttpServletRequest request) throws Exception {
+    public Object[] invokeMethod(Class<?> c, String methodName, HttpServletRequest request) throws Exception {
         Object instance = c.getDeclaredConstructor().newInstance();        
         Method method = Mapper.findMethodInClass(c, methodName);
 
-        Object result = null;
+        Object[] result = new Object[2];
         if (method != null) {
             Object[] parameters = Mapper.extractParameters(request, method);
-            result = method.invoke(instance, parameters);
+            result[0] = method.invoke(instance, parameters);
         }
+
+        if (method.isAnnotationPresent(Restapi.class)) result[1] = true;
+        else result[1] = false;
         
         return result;
     }

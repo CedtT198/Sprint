@@ -8,10 +8,10 @@ set "destinationDir=C:\ITU\S5\Framework\Test sprint"
 
 mkdir temp
 @REM 8
-javac -g -cp ".;lib/*" -d "%tempPath%" src/*.java
+@REM javac -g -cp ".;lib/*" -d "%tempPath%" src/*.java
 
 @REM 17
-@REM javac -g -cp ".;lib/*" -d "%tempPath%" "%projectPath%\src\*.java"
+javac -g -cp ".;lib/*" -d "%tempPath%" "%projectPath%\src\*.java"
 jar cvf "%tempPath%\%jarFile%" -C "%tempPath%" .
 
 rem Vérifier si le répertoire de destination existe
