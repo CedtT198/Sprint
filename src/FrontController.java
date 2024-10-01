@@ -167,36 +167,47 @@ public class FrontController extends HttpServlet {
             Object retour = retourArray[0];
             boolean rest = (boolean) retourArray[1];
 
-
             String string = "";
             ModelAndView m = null;
     
             Gson gson = new Gson();
-            response.setContentType("text/json");
             String json = "";
 
             if (retour instanceof String) {
                 string = (String) retour;
                 json = gson.toJson(string);
+
+                System.out.println(json);
             }
             else if (retour instanceof ModelAndView) {
                 m = (ModelAndView) retour;
     
+                System.out.println("Taille map : " + m.getData().size());
+                System.out.println("Taille map : " + m.getUrl());
                 for (HashMap.Entry<String, Object> data : m.getData().entrySet()) { 
                     String name = data.getKey();
                     Object value = data.getValue();
     
+                    System.out.println("name : "+name);
+                    System.out.println("value : " +value);
+
                     request.setAttribute(name, value);
                 }
                 json = gson.toJson(m.getData());
+                
+                System.out.println(json);
             }
             else {
                 String error = "ERROR : Type de retour non reconnu.\nLe type de retour d'une fonction doit obligatoirement etre de type java.lang.String ou modelandview.ModelAndView.";
                 errorList.add(error);
             }
 
-            if (rest) out.println(json);
+            if (rest) {
+                response.setContentType("text/json");
+                out.println(json);
+            }
             else {
+                response.setContentType("text/html");
                 if (retour instanceof String)  out.println("<p>" + string + "</p>");
                 else {
                     RequestDispatcher dispatcher = request.getRequestDispatcher(m.getUrl());
@@ -204,8 +215,11 @@ public class FrontController extends HttpServlet {
                 }
             }
         } catch (Exception e) {
-            String error = "ETU 002715 - ERROR : "+e.getMessage();
-            out.println("<p>" + error + "</p>");
+            out.println(e.getMessage());
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+            // String error = "ETU 002715 - ERROR : "+e.getMessage();
+            // out.println("<p>" + error + "</p>");
         }
         finally {
             out.close();

@@ -69,10 +69,6 @@ public class Mapper {
                     HttpSession session = request.getSession();
                     MySession mySession = new MySession(session);
                     args[i] = mySession;
-
-                    System.out.println("----------------------------------------\n");
-                    System.out.println("OKKKKKKKKKKKKKKKKKKKKKKKKKKK");
-                    System.out.println("----------------------------------------\n");
                 }
                 else {
                     throw new Exception("Touts les arguments d'une méthode doivent être annoté de Annotation.RequestParam ou doivent être de type util.MySession si non annoté.");
