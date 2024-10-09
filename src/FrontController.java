@@ -24,11 +24,13 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import Annotation.Get;
+import Annotation.Post;
 import Annotation.Controller;
 import Annotation.Restapi;
 import mapping.Mapping;
 import util.Mapper;
 import util.ModelAndView;
+import util.VerbAction;
 
 
 public class FrontController extends HttpServlet {
@@ -114,13 +116,63 @@ public class FrontController extends HttpServlet {
             }
         }
 
-        for (Method method : methods) {
+        for (Method method : methods)
+        {
+            String methodName = method.getName();
             if (method.isAnnotationPresent(Get.class)) {
-                Mapping mapping = new Mapping(className, method.getName());
-                Get getAnnotation = method.getAnnotation(Get.class);
-                String annotationValue = getAnnotation.value();
+                Get annotation = method.getAnnotation(Get.class);
+                String annotationValue = annotation.value();
 
-                urlMapping.put(annotationValue, mapping);
+                Mapping existingMapping = urlMapping.get(annotationValue);
+
+                if (existingMapping != null) {
+                    for (VerbAction verbAction : existingMapping.getVerbAction()) {
+                        if (verbAction.getVerb().equals("get")) {
+                            throw new ServletException("La méthode " + methodName +
+                            " est déjà mappée avec le Verb GET avec l'Url : "+annotationValue);
+                        }
+                    }
+
+                }
+                else {
+                    ArrayList<VerbAction> listVerb = new ArrayList<>();
+                    listVerb.add(new VerbAction(methodName, "get"));
+                    Mapping mapping = new Mapping(className, listVerb);
+                    urlMapping.put(annotationValue, mapping);
+                }
+                // Mapping mapping = new Mapping(className, method.getName());
+                // String annotationValue = method.getName();
+            }
+            else if (method.isAnnotationPresent(Post.class)) {
+                Post annotation = method.getAnnotation(Post.class);
+                String annotationValue = annotation.value();
+
+                Mapping existingMapping = urlMapping.get(annotationValue);
+
+                if (existingMapping != null) {
+                    for (VerbAction verbAction : existingMapping.getVerbAction()) {
+                        if (verbAction.getVerb().equals("post")) {
+                            throw new ServletException("La méthode " + methodName +
+                            " est déjà mappée avec le Verb POST avec l'Url : "+annotationValue);
+                        }
+                    }
+                    
+                }
+                else {
+                    ArrayList<VerbAction> listVerb = new ArrayList<>();
+                    listVerb.add(new VerbAction(methodName, "post"));
+                    Mapping mapping = new Mapping(className, listVerb);
+                    urlMapping.put(annotationValue, mapping);
+                }
+                // Mapping mapping = new Mapping(className, method.getName());
+                // String annotationValue = method.getName();
+            }
+            else // Si il n'y a pas de verb défini
+            {
+                ArrayList<VerbAction> listVerb = new ArrayList<>();
+                listVerb.add(new VerbAction(methodName, "get"));
+                Mapping mapping = new Mapping(className, listVerb);
+                urlMapping.put(methodName, mapping);
             }
         }
     }
@@ -182,14 +234,9 @@ public class FrontController extends HttpServlet {
             else if (retour instanceof ModelAndView) {
                 m = (ModelAndView) retour;
     
-                System.out.println("Taille map : " + m.getData().size());
-                System.out.println("Taille map : " + m.getUrl());
                 for (HashMap.Entry<String, Object> data : m.getData().entrySet()) { 
                     String name = data.getKey();
                     Object value = data.getValue();
-    
-                    System.out.println("name : "+name);
-                    System.out.println("value : " +value);
 
                     request.setAttribute(name, value);
                 }
