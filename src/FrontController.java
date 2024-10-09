@@ -29,6 +29,7 @@ import Annotation.Restapi;
 import mapping.Mapping;
 import util.Mapper;
 import util.ModelAndView;
+import util.VerbAction;
 
 
 public class FrontController extends HttpServlet {
@@ -116,11 +117,28 @@ public class FrontController extends HttpServlet {
 
         for (Method method : methods) {
             if (method.isAnnotationPresent(Get.class)) {
-                Mapping mapping = new Mapping(className, method.getName());
                 Get getAnnotation = method.getAnnotation(Get.class);
                 String annotationValue = getAnnotation.value();
 
-                urlMapping.put(annotationValue, mapping);
+                String methodName = method.getName();
+                Mapping existingMapping = urlMapping.get(annotationValue);
+
+                if (existingMapping != null) {
+                    for (VerbAction verbAction : existingMapping.getVerbAction()) {
+                        if (verbAction.getVerb().equals("get")) {
+                            throw new ServletException("La méthode " + methodName + " est déjà mappée avec le Verb GET avec l'Url : "+annotationValue);
+                        }
+                    }
+                }
+                else {
+                    ArrayList<VerbAction> listVerb = new ArrayList<>();
+                    listVerb.add(new VerbAction(methodName, "get"));
+                    Mapping mapping = new Mapping();
+                    urlMapping.put(annotationValue, mapping);
+                    url
+                }
+                // Mapping mapping = new Mapping(className, method.getName());
+                // String annotationValue = method.getName();
             }
         }
     }
@@ -182,14 +200,9 @@ public class FrontController extends HttpServlet {
             else if (retour instanceof ModelAndView) {
                 m = (ModelAndView) retour;
     
-                System.out.println("Taille map : " + m.getData().size());
-                System.out.println("Taille map : " + m.getUrl());
                 for (HashMap.Entry<String, Object> data : m.getData().entrySet()) { 
                     String name = data.getKey();
                     Object value = data.getValue();
-    
-                    System.out.println("name : "+name);
-                    System.out.println("value : " +value);
 
                     request.setAttribute(name, value);
                 }
