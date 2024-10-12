@@ -131,6 +131,10 @@ public class FrontController extends HttpServlet {
                             throw new ServletException("La méthode " + methodName +
                             " est déjà mappée avec le Verb GET avec l'Url : "+annotationValue);
                         }
+                        else {
+                            VerbAction v = new VerbAction(methodName, verbAction.getVerb());
+                            urlMapping.get(annotationValue).getVerbAction().add(v);
+                        }
                     }
 
                 }
@@ -155,8 +159,11 @@ public class FrontController extends HttpServlet {
                             throw new ServletException("La méthode " + methodName +
                             " est déjà mappée avec le Verb POST avec l'Url : "+annotationValue);
                         }
+                        else {
+                            VerbAction v = new VerbAction(methodName, verbAction.getVerb());
+                            urlMapping.get(annotationValue).getVerbAction().add(v);
+                        }
                     }
-                    
                 }
                 else {
                     ArrayList<VerbAction> listVerb = new ArrayList<>();
@@ -179,6 +186,9 @@ public class FrontController extends HttpServlet {
 
     protected void processRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         try {
+            // recherche comment prendre les verb via l'url du dev
+            String verb = "";
+
             StringBuffer requestURL = request.getRequestURL();
             String[] requestUrlSplitted = requestURL.toString().split("/");
 
@@ -194,7 +204,15 @@ public class FrontController extends HttpServlet {
             }
             else {
                 Mapping mapping = urlMapping.get(methodSearched);
-                String methodName = mapping.getMethodName();
+                // String methodName = mapping.getMethodName();
+
+                String methodName = "";
+                ArrayList<VerbAction> verbActions = mapping.getVerbAction();
+                for (VerbAction verbAction : verbActions) {
+                    if (verbAction.getVerb().equals(verb))
+                        methodName = verbAction.getMethodName();
+                }
+
                 String className = mapping.getClassName();
                 
                 executeMethod(out, request, response, methodName, className);
