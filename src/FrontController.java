@@ -6,6 +6,7 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
@@ -59,7 +60,6 @@ public class FrontController extends HttpServlet {
             }
         }
     }
-
     
     private void scanControllers(String packageName) {
         try {
@@ -87,8 +87,23 @@ public class FrontController extends HttpServlet {
                 String error = "ERROR : Classe(s) introuvable(s).\nAucun controller n'a été trouvé dans le package : '"+packageNames+"'. Ajouter vos controllers annoté de la classe AnnotationController.AnnotationController.";
                 errorList.add(error);
             }
+            
+            // Affichage urlMapping
+            // System.out.println("\nURL MAPPING APRES : ");
+            // for (HashMap.Entry<String, Mapping> data : urlMapping.entrySet()) { 
+            //     String urlName = data.getKey();
+
+            //     Mapping mapping = data.getValue();
+            //     System.out.println(mapping.getClassName());
+            //     System.out.println(urlName+" : ");
+
+            //     for (VerbAction va : mapping.getVerbAction()) {
+            //         System.out.println("- "+va.getVerb());
+            //         System.out.println("- "+va.getMethodName());
+            //     }
+            //     System.out.println("\n");
+            // }   
         } catch (Exception e) {
-            System.out.println("OK2");
             e.printStackTrace();
         }
     }
@@ -112,83 +127,84 @@ public class FrontController extends HttpServlet {
                             break;
                         }
                     }
+                    else if (methods[i].isAnnotationPresent(Post.class) && methods[j].isAnnotationPresent(Post.class)) {
+                        String mname = methods[i].getAnnotation(Post.class).value();
+                        String m2name = methods[j].getAnnotation(Post.class).value();
+                        if (mname == m2name) {
+                            String error = "ERROR : Valeur des annotations similaires.\nPost(value=\""+mname+"\") revient plusieurs fois. La valeur de l'annotation de chaque controller doit être unique.";
+                            errorList.add(error);
+                            break;
+                        }
+                    }
                 }
             }
         }
 
-        for (Method method : methods)
-        {
+        // Affichage des methods
+        // System.out.println("Class : "+className);
+        // for (int i = 0; i < methods.length; i++) {
+        //     System.out.println("Method : "+methods[i].getName());
+        // }
+
+        for (Method method : methods) {
             String methodName = method.getName();
+            
+            System.out.println(className);
+            System.out.println(methodName);
+
             if (method.isAnnotationPresent(Get.class)) {
+                System.out.println("GET ty");
                 Get annotation = method.getAnnotation(Get.class);
                 String annotationValue = annotation.value();
-
-                Mapping existingMapping = urlMapping.get(annotationValue);
-
-                if (existingMapping != null) {
-                    for (VerbAction verbAction : existingMapping.getVerbAction()) {
-                        if (verbAction.getVerb().equals("get")) {
-                            throw new ServletException("La méthode " + methodName +
-                            " est déjà mappée avec le Verb GET avec l'Url : "+annotationValue);
-                        }
-                        else {
-                            VerbAction v = new VerbAction(methodName, verbAction.getVerb());
-                            urlMapping.get(annotationValue).getVerbAction().add(v);
-                        }
-                    }
-
-                }
-                else {
-                    ArrayList<VerbAction> listVerb = new ArrayList<>();
-                    listVerb.add(new VerbAction(methodName, "get"));
-                    Mapping mapping = new Mapping(className, listVerb);
-                    urlMapping.put(annotationValue, mapping);
-                }
-                // Mapping mapping = new Mapping(className, method.getName());
-                // String annotationValue = method.getName();
+                processMapping(methodName, "GET", annotationValue, urlMapping, className);
             }
             else if (method.isAnnotationPresent(Post.class)) {
+                System.out.println("POST ty");
                 Post annotation = method.getAnnotation(Post.class);
                 String annotationValue = annotation.value();
-
-                Mapping existingMapping = urlMapping.get(annotationValue);
-
-                if (existingMapping != null) {
-                    for (VerbAction verbAction : existingMapping.getVerbAction()) {
-                        if (verbAction.getVerb().equals("post")) {
-                            throw new ServletException("La méthode " + methodName +
-                            " est déjà mappée avec le Verb POST avec l'Url : "+annotationValue);
-                        }
-                        else {
-                            VerbAction v = new VerbAction(methodName, verbAction.getVerb());
-                            urlMapping.get(annotationValue).getVerbAction().add(v);
-                        }
-                    }
-                }
-                else {
-                    ArrayList<VerbAction> listVerb = new ArrayList<>();
-                    listVerb.add(new VerbAction(methodName, "post"));
-                    Mapping mapping = new Mapping(className, listVerb);
-                    urlMapping.put(annotationValue, mapping);
-                }
-                // Mapping mapping = new Mapping(className, method.getName());
-                // String annotationValue = method.getName();
+                processMapping(methodName, "POST", annotationValue, urlMapping, className);
             }
-            else // Si il n'y a pas de verb défini
-            {
-                ArrayList<VerbAction> listVerb = new ArrayList<>();
-                listVerb.add(new VerbAction(methodName, "get"));
-                Mapping mapping = new Mapping(className, listVerb);
-                urlMapping.put(methodName, mapping);
+            // else { // Rehefa tsy misy Verb définie
+            //     System.out.println("Aucun VERB ty");
+            //     ArrayList<VerbAction> listVerb = new ArrayList<>();
+            //     listVerb.add(new VerbAction(methodName, "GET"));
+            //     Mapping mapping = new Mapping(className, listVerb);
+            //     urlMapping.put(methodName, mapping);
+            // }
+
+            // Mapping mapping = new Mapping(className, method.getName());
+            // String annotationValue = method.getName();
+        }
+    }
+    
+    private void processMapping(String methodName, String httpVerb, String annotationValue, HashMap<String, Mapping> urlMapping, String className) throws Exception {
+        System.out.println("Annotation value : "+annotationValue);
+        System.out.println("1");
+        Mapping existingMapping = urlMapping.get(annotationValue);
+        
+        System.out.println("2");
+        if (existingMapping != null) {
+            System.out.println("3");
+            for (VerbAction verbAction : existingMapping.getVerbAction()) {
+                if (verbAction.getVerb().equals(httpVerb)) {
+                    System.out.println("4");
+                    throw new ServletException("La méthode " + methodName +
+                    " est déjà mappée avec le verbe " + httpVerb + " à l'URL : " + annotationValue);
+                }
             }
+            urlMapping.get(annotationValue).getVerbAction().add(new VerbAction(methodName, httpVerb));
+        }
+        else {
+            System.out.println("ok");
+            ArrayList<VerbAction> listVerb = new ArrayList<>();
+            listVerb.add(new VerbAction(methodName, httpVerb));
+            Mapping mapping = new Mapping(className, listVerb);
+            urlMapping.put(annotationValue, mapping);
         }
     }
 
     protected void processRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         try {
-            // recherche comment prendre les verb via l'url du dev
-            String verb = "";
-
             StringBuffer requestURL = request.getRequestURL();
             String[] requestUrlSplitted = requestURL.toString().split("/");
 
@@ -208,13 +224,16 @@ public class FrontController extends HttpServlet {
 
                 String methodName = "";
                 ArrayList<VerbAction> verbActions = mapping.getVerbAction();
+                
+                String verb = request.getMethod();
                 for (VerbAction verbAction : verbActions) {
                     if (verbAction.getVerb().equals(verb))
                         methodName = verbAction.getMethodName();
                 }
 
+                System.out.println("Method associé à l'url : "+methodName);
+
                 String className = mapping.getClassName();
-                
                 executeMethod(out, request, response, methodName, className);
             }
 

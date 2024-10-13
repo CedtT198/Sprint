@@ -33,4 +33,4 @@ rmdir /s /q "%tempPath%"
 cd %destinationDir%
 call deploy.bat
 
-pause
+@REM pause
