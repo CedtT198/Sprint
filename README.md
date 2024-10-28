@@ -4,8 +4,7 @@
 
 # Configuration dans web.xml : 
 
-- Changer la valeur de param-value en le nom du package contenant vos controllers 
-- Attention! Tous les controleurs doivent être dans un package du nom "Controller"
+- Changer la valeur de param-value en le nom du package contenant vos controllers
 
 # Comment utiliser le framework ?
 

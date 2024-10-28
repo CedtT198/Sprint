@@ -1,6 +1,10 @@
 package mg.prom16.controller;
 
 import com.google.gson.Gson;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
@@ -153,13 +157,11 @@ public class FrontController extends HttpServlet {
             System.out.println(methodName);
 
             if (method.isAnnotationPresent(Get.class)) {
-                System.out.println("GET ty");
                 Get annotation = method.getAnnotation(Get.class);
                 String annotationValue = annotation.value();
                 processMapping(methodName, "GET", annotationValue, urlMapping, className);
             }
             else if (method.isAnnotationPresent(Post.class)) {
-                System.out.println("POST ty");
                 Post annotation = method.getAnnotation(Post.class);
                 String annotationValue = annotation.value();
                 processMapping(methodName, "POST", annotationValue, urlMapping, className);
@@ -176,18 +178,14 @@ public class FrontController extends HttpServlet {
             // String annotationValue = method.getName();
         }
     }
+
     
     private void processMapping(String methodName, String httpVerb, String annotationValue, HashMap<String, Mapping> urlMapping, String className) throws Exception {
-        System.out.println("Annotation value : "+annotationValue);
-        System.out.println("1");
         Mapping existingMapping = urlMapping.get(annotationValue);
         
-        System.out.println("2");
         if (existingMapping != null) {
-            System.out.println("3");
             for (VerbAction verbAction : existingMapping.getVerbAction()) {
                 if (verbAction.getVerb().equals(httpVerb)) {
-                    System.out.println("4");
                     throw new ServletException("La méthode " + methodName +
                     " est déjà mappée avec le verbe " + httpVerb + " à l'URL : " + annotationValue);
                 }
@@ -195,7 +193,6 @@ public class FrontController extends HttpServlet {
             urlMapping.get(annotationValue).getVerbAction().add(new VerbAction(methodName, httpVerb));
         }
         else {
-            System.out.println("ok");
             ArrayList<VerbAction> listVerb = new ArrayList<>();
             listVerb.add(new VerbAction(methodName, httpVerb));
             Mapping mapping = new Mapping(className, listVerb);
@@ -203,6 +200,28 @@ public class FrontController extends HttpServlet {
         }
     }
 
+
+    private void notFoundResponse(HttpServletResponse response) throws IOException {
+        response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+
+        response.setContentType("text/html");
+        String htmlResponse = "<!DOCTYPE html>" +
+                "<html lang=\"en\">" +
+                    "<head>" +
+                        "<meta charset=\"UTF-8\">" +
+                        "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">" +
+                        "<title>404 - Not Found</title>" +
+                    "</head>" +
+                    "<body>" +
+                        "<h1>404 - Page Not Found</h1>" +
+                        "<p>Oops! La page que vous cherchez n'existe pas.</p>" +
+                    "</body>" +
+                "</html>";
+
+        response.getWriter().write(htmlResponse);
+    }               
+
+    
     protected void processRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         try {
             StringBuffer requestURL = request.getRequestURL();
@@ -214,27 +233,19 @@ public class FrontController extends HttpServlet {
             response.setContentType("text/html");
 
             if (!urlMapping.containsKey(methodSearched)) {
-                // out.println("<p>Aucune méthode associe a ce chemin.</p>");
-                RequestDispatcher dispatcher = request.getRequestDispatcher("login.jsp");
-                dispatcher.forward(request, response);
+                if (request.getContentType() != null && request.getContentType().startsWith("multipart/form-data")) {
+                    processFileUpload(request, response);
+                }
+                else {
+                    notFoundResponse(response);
+                    
+                    // out.println("<p>Aucune méthode associe a ce chemin.</p>");
+                    // RequestDispatcher dispatcher = request.getRequestDispatcher("login.jsp");
+                    // dispatcher.forward(request, response);
+                }
             }
             else {
-                Mapping mapping = urlMapping.get(methodSearched);
-                // String methodName = mapping.getMethodName();
-
-                String methodName = "";
-                ArrayList<VerbAction> verbActions = mapping.getVerbAction();
-                
-                String verb = request.getMethod();
-                for (VerbAction verbAction : verbActions) {
-                    if (verbAction.getVerb().equals(verb))
-                        methodName = verbAction.getMethodName();
-                }
-
-                System.out.println("Method associé à l'url : "+methodName);
-
-                String className = mapping.getClassName();
-                executeMethod(out, request, response, methodName, className);
+                handleMethod(request, response, out, methodSearched);
             }
 
             if (errorList.size() > 0) {
@@ -248,6 +259,76 @@ public class FrontController extends HttpServlet {
             e.printStackTrace();
         }
     }
+
+
+    protected void processFileUpload(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        byte[] buffer = new byte[1024];
+        int bytesRead;
+
+        InputStream inputStream = request.getInputStream();
+        String boundary = request.getContentType().split("boundary=")[1];
+
+        StringBuilder sb = new StringBuilder();
+
+        System.out.println("ok1");
+        while ((bytesRead = inputStream.read(buffer)) != -1) {
+            sb.append(new String(buffer, 0, bytesRead));
+        }
+        String content = sb.toString();
+
+        String[] parts = content.split("--" + boundary);
+
+        System.out.println("ok2");
+        for (String part : parts) {
+            if (part.contains("Content-Disposition: form-data; name=\"file\"; filename=\"")) {
+                String fileName = part.substring(part.indexOf("filename=\"") + 10, part.indexOf("\"", part.indexOf("filename=\"") + 10));
+                
+                System.out.println("ok3");
+                int fileContentStart = part.indexOf("\r\n\r\n") + 4;
+                int fileContentEnd = part.lastIndexOf("\r\n");
+                byte[] fileData = part.substring(fileContentStart, fileContentEnd).getBytes();
+
+                // Chemin où mettre le fichier à upload
+                String uploadPath = "C:/Program Files/Apache Software Foundation/Tomcat 10.1/webapps/MONAPP/assets/upload";
+                File uploadsDir = new File(uploadPath);
+                
+                System.out.println("ok4");
+                if (!uploadsDir.exists()) {
+                    uploadsDir.mkdirs();
+                }
+
+                File file = new File(uploadsDir, fileName);
+
+                try (FileOutputStream fos = new FileOutputStream(file)) {
+                    fos.write(fileData);
+                }
+
+                System.out.println("ok");
+                response.getWriter().println("Fichier '" + fileName + "' uploade avec succes dans le repertoire : " + uploadPath);
+            }
+        }
+    }
+
+
+    private void handleMethod(HttpServletRequest request, HttpServletResponse response, PrintWriter out, String methodSearched) throws Exception {
+        Mapping mapping = urlMapping.get(methodSearched);
+        // String methodName = mapping.getMethodName();
+
+        ArrayList<VerbAction> verbActions = mapping.getVerbAction();
+
+        String methodName = "";                   
+        String verb = request.getMethod();
+        for (VerbAction verbAction : verbActions) {
+            if (verbAction.getVerb().equals(verb))
+                methodName = verbAction.getMethodName();
+        }
+
+        System.out.println("Method associé à l'url : "+methodName);
+        
+        String className = mapping.getClassName();
+        executeMethod(out, request, response, methodName, className);
+    }
+
     
     public void executeMethod(PrintWriter out, HttpServletRequest request, HttpServletResponse response, String methodName, String className) throws Exception {
         Class<?> c = Class.forName(className);
@@ -309,6 +390,7 @@ public class FrontController extends HttpServlet {
             out.close();
         }
     }
+
 
     public Object[] invokeMethod(Class<?> c, String methodName, HttpServletRequest request) throws Exception {
         Object instance = c.getDeclaredConstructor().newInstance();        
