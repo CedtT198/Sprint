@@ -270,7 +270,6 @@ public class FrontController extends HttpServlet {
 
         StringBuilder sb = new StringBuilder();
 
-        System.out.println("ok1");
         while ((bytesRead = inputStream.read(buffer)) != -1) {
             sb.append(new String(buffer, 0, bytesRead));
         }
@@ -278,12 +277,10 @@ public class FrontController extends HttpServlet {
 
         String[] parts = content.split("--" + boundary);
 
-        System.out.println("ok2");
         for (String part : parts) {
             if (part.contains("Content-Disposition: form-data; name=\"file\"; filename=\"")) {
                 String fileName = part.substring(part.indexOf("filename=\"") + 10, part.indexOf("\"", part.indexOf("filename=\"") + 10));
                 
-                System.out.println("ok3");
                 int fileContentStart = part.indexOf("\r\n\r\n") + 4;
                 int fileContentEnd = part.lastIndexOf("\r\n");
                 byte[] fileData = part.substring(fileContentStart, fileContentEnd).getBytes();
@@ -292,7 +289,6 @@ public class FrontController extends HttpServlet {
                 String uploadPath = "C:/Program Files/Apache Software Foundation/Tomcat 10.1/webapps/MONAPP/assets/upload";
                 File uploadsDir = new File(uploadPath);
                 
-                System.out.println("ok4");
                 if (!uploadsDir.exists()) {
                     uploadsDir.mkdirs();
                 }
