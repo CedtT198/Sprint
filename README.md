@@ -8,12 +8,16 @@
 
 # Comment utiliser le framework ?
 
-- Il faut que l'utilisateur annote ses controllers de l'annotation "Annotation.Controller" et les méthodes de ces controllers de l'annotation 'Get' avec une valeur unique pour chaque méthode
+- Il faut que l'utilisateur annote ses controllers de l'annotation "Annotation.Controller" et les méthodes de ces controllers de l'annotation 'Get' ou 'Post' avec une valeur unique pour chaque méthode
 - Toutes les fonctions annotées doivent être de type "java.lang.String" ou "modelandview.ModelAndView" seulement
 - Pour les passages de données via un formulaire, vous avez 2 choix :
     - Annoter les paramètres des méthodes de l'annotation "Annotation.RequestParam"
     - Mettre un objet en paramètre des méthodes et annoter la classe de cet objet  et ses attributs de "Annotation.Model" et de "Annotation.Field"
-- Pour l'utilisation de Session, ajouter util.MySession aux paramètres de la méthode
+- Pour l'utilisation de Session, ajouter util.MySession aux paramètres de la méthode des controllers
+- Pour les validations de formulaire
+    - Annoter les attributs des Models avec les annotations dans package "validation.annotation"
+    - Utiliser la fonction Validation.validate(Object object)
+
 
 N.B :
 - Ligne 138 tokony soloina anaranle page index
