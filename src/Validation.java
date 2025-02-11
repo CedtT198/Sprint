@@ -8,7 +8,6 @@ import validation.exception.*;
 import validation.annotation.*;
 
 public class Validation {
-
     public static void validate(Object object) throws ValidationException {
         String errors = "";
         Class<?> clazz = object.getClass();

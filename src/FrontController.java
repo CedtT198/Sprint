@@ -319,7 +319,7 @@ public class FrontController extends HttpServlet {
                 methodName = verbAction.getMethodName();
         }
 
-        System.out.println("Method associé à l'url : "+methodName);
+        System.out.println("Methode associé à l'url : "+methodName);
         
         String className = mapping.getClassName();
         executeMethod(out, request, response, methodName, className);
