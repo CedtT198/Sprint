@@ -36,6 +36,7 @@ import mapping.Mapping;
 import util.Mapper;
 import util.ModelAndView;
 import util.VerbAction;
+import validation.exception.ValidationException;
 
 
 public class FrontController extends HttpServlet {
@@ -126,7 +127,7 @@ public class FrontController extends HttpServlet {
                         String mname = methods[i].getAnnotation(Get.class).value();
                         String m2name = methods[j].getAnnotation(Get.class).value();
                         if (mname == m2name) {
-                            String error = "ERROR : Valeur des annotations similaires.\nGet(value=\""+mname+"\") revient plusieurs fois. La valeur de l'annotation de chaque controller doit être unique.";
+                            String error = "<strong>ERROR :</strong><p>Valeur des annotations similaires.</p><br>\n<p>@Get(value=\""+mname+"\") revient plusieurs fois. La valeur de l'annotation de chaque controller doit être unique.</p><br>";
                             errorList.add(error);
                             break;
                         }
@@ -135,7 +136,7 @@ public class FrontController extends HttpServlet {
                         String mname = methods[i].getAnnotation(Post.class).value();
                         String m2name = methods[j].getAnnotation(Post.class).value();
                         if (mname == m2name) {
-                            String error = "ERROR : Valeur des annotations similaires.\nPost(value=\""+mname+"\") revient plusieurs fois. La valeur de l'annotation de chaque controller doit être unique.";
+                            String error = "<strong>ERROR :</strong><p>Valeur des annotations similaires.</p><br>\n<p>@Post(value=\""+mname+"\") revient plusieurs fois. La valeur de l'annotation de chaque controller doit être unique.</p><br>";
                             errorList.add(error);
                             break;
                         }
@@ -315,8 +316,12 @@ public class FrontController extends HttpServlet {
         String methodName = "";                   
         String verb = request.getMethod();
         for (VerbAction verbAction : verbActions) {
-            if (verbAction.getVerb().equals(verb))
+            if (verbAction.getVerb().equals(verb)) {
                 methodName = verbAction.getMethodName();
+            }
+            else {
+                throw new Exception("Verb associe a la methode '"+methodSearched+"' est '"+verb+"'.");
+            }
         }
 
         System.out.println("Methode associé à l'url : "+methodName);
@@ -330,8 +335,9 @@ public class FrontController extends HttpServlet {
         Class<?> c = Class.forName(className);
         try {
             Object[] retourArray = invokeMethod(c, methodName, request);
-            Object retour = retourArray[0];
-            boolean rest = (boolean) retourArray[1];
+
+            Object methodType = retourArray[0];
+            boolean usingApiRest = (boolean) retourArray[1];
 
             String string = "";
             ModelAndView m = null;
@@ -339,14 +345,14 @@ public class FrontController extends HttpServlet {
             Gson gson = new Gson();
             String json = "";
 
-            if (retour instanceof String) {
-                string = (String) retour;
+            if (methodType instanceof String) {
+                string = (String) methodType;
                 json = gson.toJson(string);
 
                 System.out.println(json);
             }
-            else if (retour instanceof ModelAndView) {
-                m = (ModelAndView) retour;
+            else if (methodType instanceof ModelAndView) {
+                m = (ModelAndView) methodType;
     
                 for (HashMap.Entry<String, Object> data : m.getData().entrySet()) { 
                     String name = data.getKey();
@@ -363,19 +369,30 @@ public class FrontController extends HttpServlet {
                 errorList.add(error);
             }
 
-            if (rest) {
+            if (usingApiRest) {
                 response.setContentType("text/json");
                 out.println(json);
             }
             else {
                 response.setContentType("text/html");
-                if (retour instanceof String)  out.println("<p>" + string + "</p>");
+                if (methodType instanceof String)  out.println("<p>" + string + "</p>");
                 else {
                     RequestDispatcher dispatcher = request.getRequestDispatcher(m.getUrl());
                     dispatcher.forward(request, response);
                 }
             }
-        } catch (Exception e) {
+        }
+        catch (ValidationException ve) {
+            // System.out.println("-------------------validation exception-------------------");
+            String[] splittedRequest = request.getHeader("referer").toString().split("/");
+            // System.out.println(splittedRequest[splittedRequest.length-1]);
+
+            request.getSession().setAttribute("errors", ve.getErrors());
+            response.sendRedirect(splittedRequest[splittedRequest.length-1]);
+            // request.setAttribute("errors", ve.getErrors());
+            // request.getRequestDispatcher(splittedRequest[splittedRequest.length-1]).forward(request, response);
+        }
+        catch (Exception e) {
             out.println(e.getMessage());
             System.out.println(e.getMessage());
             e.printStackTrace();
@@ -393,9 +410,14 @@ public class FrontController extends HttpServlet {
         Method method = Mapper.findMethodInClass(c, methodName);
 
         Object[] result = new Object[2];
+        // [0] : String ou ModelAndView retour de fonction
+        // [1] : true si RestApi, false si controller normal
         if (method != null) {
             Object[] parameters = Mapper.extractParameters(request, method);
             result[0] = method.invoke(instance, parameters);
+        }
+        else {
+            throw new Exception("Methode introuvable.");
         }
 
         if (method.isAnnotationPresent(Restapi.class)) result[1] = true;

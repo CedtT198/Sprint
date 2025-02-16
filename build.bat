@@ -12,6 +12,9 @@ mkdir temp
 
 @REM 17
 javac -g -cp ".;lib/*" -d "%tempPath%" "%projectPath%\src\*.java"
+
+echo "Comilation termine."
+
 jar cvf "%tempPath%\%jarFile%" -C "%tempPath%" .
 
 rem Vérifier si le répertoire de destination existe

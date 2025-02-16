@@ -6,11 +6,15 @@ import util.MySession;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.util.HashMap;
+import java.util.Map;
 import com.thoughtworks.paranamer.AdaptiveParanamer;
 import com.thoughtworks.paranamer.Paranamer;
-import Annotation.RequestMapping;
+import Annotation.RequestObject;
 import Annotation.RequestField;
 import Annotation.RequestParam;
+import validation.Validation;
+import validation.exception.ValidationException;
 
 public class Mapper {
 
@@ -22,8 +26,10 @@ public class Mapper {
         }
         return null;
     }
-    
+
     public static Object[] extractParameters(HttpServletRequest request, Method method) throws Exception {
+        Map<String, String> errors = new HashMap<>();
+
         Parameter[] parameters = method.getParameters();  
         // checkAnnotedParameter(parameters);
 
@@ -37,30 +43,38 @@ public class Mapper {
         for (int i = 0; i < parameters.length; i++) {
             Parameter parameter = parameters[i];
 
-            if (parameter.isAnnotationPresent(RequestParam.class)) {
+            // parametre avec variable de type primitif
+            if (parameter.isAnnotationPresent(RequestParam.class)) { 
                 RequestParam annotation = parameter.getAnnotation(RequestParam.class); 
                 String paramName = annotation.value();  
                 String paramValue = request.getParameter(paramName);  
+
                 args[i] = convertParameter(paramValue, parameter.getType()); 
             } 
-            else if (parameter.isAnnotationPresent(RequestMapping.class)) {
-                Class<?> parameterType = parameter.getType();  
-                Object parameterObject = parameterType.getDeclaredConstructor().newInstance();  
-    
-                for (Field field : parameterType.getDeclaredFields()) {
-                    String fieldName = field.getName();  
-                    String paramName = parameterType.getSimpleName().toLowerCase() + "." + fieldName;  
-                    String paramValue = request.getParameter(paramName);  
+            // parametre de type Object
+            else if (parameter.isAnnotationPresent(RequestObject.class)) {
+                Class<?> parameterType = parameter.getType();
+                Object parameterObject = parameterType.getDeclaredConstructor().newInstance();
 
-                    if (paramValue != null) {
-                        Object convertedValue = convertParameter(paramValue, field.getType());  
-                        
-                        System.out.println(convertedValue);
-                        
-                        String setterName = "set" + Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1);
-                        Method setter = parameterType.getMethod(setterName, field.getType()); 
-                        setter.invoke(parameterObject, convertedValue);  
-                    }
+                for (Field field : parameterType.getDeclaredFields()) {
+                    String fieldName = field.getName();
+                    // System.out.println("Field name  : "+fieldName);
+                    String paramName = parameterType.getSimpleName().toLowerCase() + "." + fieldName;
+                    // System.out.println("Param name  : "+paramName);
+                    String paramValue = request.getParameter(paramName);
+
+                    Object convertedValue = convertParameter(paramValue, field.getType());  
+                    
+                    String setterName = "set" + Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1);
+                    Method setter = parameterType.getMethod(setterName, field.getType()); 
+                    // System.out.println("Setter name : "+setterName);
+                    // System.out.println("Converted value : "+convertedValue);
+
+                    setter.invoke(parameterObject, convertedValue);  
+                }
+                errors = Validation.validate(request, parameterObject, errors);
+                if (!errors.isEmpty()) {
+                    throw new ValidationException(errors);
                 }
                 args[i] = parameterObject;  
             }
@@ -133,7 +147,8 @@ public class Mapper {
 
     public static Object convertParameter(String value, Class<?> type) throws Exception {
         Object object = null;
-        if (value == null) {
+        if (value == null || value.equals("") || value.equals(" ")) {
+            // System.out.println("IE NULL");
             return null;
         }
         else if (type == String.class) {

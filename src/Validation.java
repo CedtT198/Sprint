@@ -2,20 +2,23 @@ package validation;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import jakarta.servlet.http.HttpServletRequest;
 import validation.exception.*;
 import validation.annotation.*;
 
 public class Validation {
-    public static void validate(Object object) throws ValidationException {
-        String errors = "";
+    public static Map<String, String> validate(HttpServletRequest request, Object object, Map<String, String> errors) throws Exception {
         Class<?> clazz = object.getClass();
 
         for (Field field : clazz.getDeclaredFields()) {
             try {
                 field.setAccessible(true);
-                
+
                 // Vérifie si nombre input inférieure à minimum
                 if (field.isAnnotationPresent(Min.class)) {
                     Min minAnnotation = field.getAnnotation(Min.class);
@@ -23,7 +26,9 @@ public class Validation {
                     if (value instanceof Integer) {
                         int intValue = (Integer) value;
                         if (intValue < minAnnotation.value()) { 
-                            errors += minAnnotation.message() + "\n";
+                            System.out.println("Contrainte Minimum");
+                            System.out.println(field.getName()+" : "+value);
+                            errors.put(field.getName(), minAnnotation.message());
                         }
                         // else {
                         //     errors += "Champ " +field.getName()+ " doit être de type number.\n";
@@ -38,7 +43,9 @@ public class Validation {
                     if (value instanceof Integer) {
                         int intValue = (Integer) value;
                         if (intValue > maxAnnotation.value()) { 
-                            errors += maxAnnotation.message() + "\n";
+                            System.out.println("Contrainte Maximum");
+                            System.out.println(field.getName()+" : "+value);
+                            errors.put(field.getName(), maxAnnotation.message());
                         }
                         // else {
                         //     errors += "Champ " +field.getName()+ " doit être de type number.\n";
@@ -51,7 +58,9 @@ public class Validation {
                     NotEmpty notEmpty = field.getAnnotation(NotEmpty.class);
                     Object value = field.get(object);
                     if (value == null || value.toString().trim().isEmpty()) {
-                        errors += notEmpty.message() + "\n";
+                        System.out.println("Contrainte NotEmpy");
+                        System.out.println(field.getName()+" : "+value);
+                        errors.put(field.getName(), notEmpty.message());
                     }
                 }
                 
@@ -62,7 +71,9 @@ public class Validation {
                     if (value instanceof String) {
                         String stringValue = (String) value;
                         if (!isMailOk(stringValue)) { 
-                            errors += mailAnnotation.message() + "\n";
+                            System.out.println("Contrainte Email");
+                            System.out.println(field.getName()+" : "+value);
+                            errors.put(field.getName(), mailAnnotation.message());
                         }
                     }
                 }
@@ -74,21 +85,23 @@ public class Validation {
                     if (value instanceof String) {
                         String stringValue = (String) value;
                         if (stringValue.length() < passwordAnnotation.value()) { 
-                            errors += passwordAnnotation.message() + "\n";
+                            System.out.println("Contrainte Password");
+                            errors.put(field.getName(), passwordAnnotation.message());
                         }
                     }
                 }
 
             } catch (IllegalAccessException e) {
-                errors += "Impossible d\'accéder à ce champ "+field.getName()+".\n";
-                throw new ValidationException(errors);
+                throw new Exception("Impossible d\'accéder à ce champ "+field.getName());
             }
         }
 
-        if (!errors.isEmpty()) {
-            throw new ValidationException(errors);
-        }
+        return errors;
     } 
+
+    // private static void addError(Map<String, List<String>> errors, String fieldName, String message) {
+    //     errors.computeIfAbsent(fieldName, key -> new ArrayList<>()).add(message);
+    // }
 
     public static boolean isMailOk(String email) {
         String regex = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
