@@ -1,19 +1,15 @@
 # Sprint
 
-<h2> Configuration :</h2>
-<ul>
-    <h3>Dans web.xml<h3>
-    <li>Changer la valeur de param-value en le nom du package contenant vos controllers</li>
-</ul>
-<ul>
-    <h3>Dans build.bat<h3>
-    <li>Changer "destinationDir" dans "build.bat" pour spécfier la destination du JAR File. Le JAR sera présent dans le répertoire actuel si chemin erroné</li>
-    <li> Changer valeur de 'uploadPath' dans fonction 'processFileUpload' dans 'FrontController' pour l'emplacement des fichiers a importer</li>
-    <!-- <li>Ligne 138 tokony soloina anaranle page index </li> -->
-    <li>Choisir ligne 11 ou 14 "build.bat" pour compilation en fonction de la version de votre JDK</li>
-</ul> 
+# Configuration :
+- Dans web.xml
+    - Changer la valeur de param-value en le nom du package contenant vos controllers
+- Dans build.bat
+    - Changer "destinationDir" dans "build.bat" pour spécfier la destination du JAR File. Le JAR sera présent dans le répertoire actuel si chemin erroné
+    - Changer valeur de 'uploadPath' dans fonction 'processFileUpload' dans 'FrontController' pour l'emplacement des fichiers a importer
+    <!-- - Ligne 138 tokony soloina anaranle page index -->
+    - Choisir ligne 11 ou 14 "build.bat" pour compilation en fonction de la version de votre JDK 
 
-<h2>Comment utiliser le framework ?</h2>
+# Comment utiliser le framework ?
 
 <p style="color:red">UTILISER TOUJOURS DES OBJETS DANS LES VOS MODELS, SURTOUT PAS DE VARIABLES PRIMITIVES</p>
 
