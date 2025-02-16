@@ -383,21 +383,15 @@ public class FrontController extends HttpServlet {
             }
         }
         catch (ValidationException ve) {
-            // System.out.println("-------------------validation exception-------------------");
             String[] splittedRequest = request.getHeader("referer").toString().split("/");
-            // System.out.println(splittedRequest[splittedRequest.length-1]);
 
             request.getSession().setAttribute("errors", ve.getErrors());
             response.sendRedirect(splittedRequest[splittedRequest.length-1]);
-            // request.setAttribute("errors", ve.getErrors());
-            // request.getRequestDispatcher(splittedRequest[splittedRequest.length-1]).forward(request, response);
         }
         catch (Exception e) {
             out.println(e.getMessage());
             System.out.println(e.getMessage());
             e.printStackTrace();
-            // String error = "ETU 002715 - ERROR : "+e.getMessage();
-            // out.println("<p>" + error + "</p>");
         }
         finally {
             out.close();
