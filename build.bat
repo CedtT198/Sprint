@@ -4,7 +4,8 @@
 set "projectPath=."
 set "tempPath=temp"
 set "jarFile=spring-ced.jar"
-set "destinationDir=C:\ITU\S5\Framework\Test sprint"
+@REM set "destinationDir=C:\ITU\S5\Framework\Test sprint"
+set "destinationDir=C:\ITU\S5\Framework\Temoin\ticketing"
 
 mkdir temp
 @REM 8
@@ -32,8 +33,8 @@ copy "%projectPath%\lib\paranamer-2.8.jar" "%destinationDir%\lib\"
 rem supprimer le répertoire temporaire
 rmdir /s /q "%tempPath%"
 
-@REM Appel du script du déploiement de l'application test
+@REM Appel du script du déploiement de l'application utilisant le framework
 cd %destinationDir%
-call deploy.bat
+@REM call deploy.bat
 
-@REM pause
+pause

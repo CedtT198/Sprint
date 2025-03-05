@@ -23,34 +23,30 @@ public class Validation {
                 if (field.isAnnotationPresent(Min.class)) {
                     Min minAnnotation = field.getAnnotation(Min.class);
                     Object value = field.get(object);
-                    if (value instanceof Integer) {
-                        int intValue = (Integer) value;
-                        if (intValue < minAnnotation.value()) { 
-                            System.out.println("Contrainte Minimum");
-                            System.out.println(field.getName()+" : "+value);
-                            errors.put(field.getName(), minAnnotation.message());
-                        }
-                        // else {
-                        //     errors += "Champ " +field.getName()+ " doit être de type number.\n";
-                        // }
+                    int intValue = castToInteger(value);
+                    if (intValue < minAnnotation.value()) { 
+                        System.out.println("Contrainte Minimum");
+                        System.out.println(field.getName()+" : "+value);
+                        errors.put(field.getName(), minAnnotation.message());
                     }
+                    // else {
+                    //     errors += "Champ " +field.getName()+ " doit être de type number.\n";
+                    // }
                 }
 
                 // Vérifie si nombre input supérieure à maximum
                 if (field.isAnnotationPresent(Max.class)) {
                     Max maxAnnotation = field.getAnnotation(Max.class);
                     Object value = field.get(object);
-                    if (value instanceof Integer) {
-                        int intValue = (Integer) value;
-                        if (intValue > maxAnnotation.value()) { 
-                            System.out.println("Contrainte Maximum");
-                            System.out.println(field.getName()+" : "+value);
-                            errors.put(field.getName(), maxAnnotation.message());
-                        }
-                        // else {
-                        //     errors += "Champ " +field.getName()+ " doit être de type number.\n";
-                        // }
+                    int intValue = castToInteger(value);
+                    if (intValue > maxAnnotation.value()) { 
+                        System.out.println("Contrainte Maximum");
+                        System.out.println(field.getName()+" : "+value);
+                        errors.put(field.getName(), maxAnnotation.message());
                     }
+                    // else {
+                    //     errors += "Champ " +field.getName()+ " doit être de type number.\n";
+                    // }
                 }
                 
                 // Le champ doit être != null
@@ -102,6 +98,22 @@ public class Validation {
     // private static void addError(Map<String, List<String>> errors, String fieldName, String message) {
     //     errors.computeIfAbsent(fieldName, key -> new ArrayList<>()).add(message);
     // }
+
+    public static int castToInteger(Object numeric) {
+        int response = 0;
+        if (numeric instanceof Integer) {
+            response = (Integer) numeric;
+        }
+        else if (numeric instanceof Double) {
+            Double n  = (Double) numeric;
+            response = n.intValue();
+        }
+        else if (numeric instanceof Float) {
+            Float n  = (Float) numeric;
+            response = n.intValue();
+        }
+        return response;
+    }
 
     public static boolean isMailOk(String email) {
         String regex = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";

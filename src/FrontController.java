@@ -18,6 +18,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +29,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import Annotation.Get;
 import Annotation.Post;
 import Annotation.Controller;
@@ -287,7 +289,8 @@ public class FrontController extends HttpServlet {
                 byte[] fileData = part.substring(fileContentStart, fileContentEnd).getBytes();
 
                 // Chemin où mettre le fichier à upload
-                String uploadPath = "C:/Program Files/Apache Software Foundation/Tomcat 10.1/webapps/MONAPP/assets/upload";
+                String uploadPath = "C:/Program Files/Apache Software Foundation/Tomcat 10.1/webapps/Ticketing/upload";
+                // String uploadPath = "C:/Program Files/Apache Software Foundation/Tomcat 10.1/webapps/MONAPP/assets/upload";
                 File uploadsDir = new File(uploadPath);
                 
                 if (!uploadsDir.exists()) {
@@ -296,12 +299,21 @@ public class FrontController extends HttpServlet {
 
                 File file = new File(uploadsDir, fileName);
 
+                ModelAndView m = null;
                 try (FileOutputStream fos = new FileOutputStream(file)) {
                     fos.write(fileData);
+                    
+                    String[] splittedRequest = request.getHeader("referer").toString().split("/");
+                    String url = splittedRequest[splittedRequest.length-1];
+                    m = new ModelAndView(url);
+                    m.addObject("success", "Fichier '" + fileName + "' uploade avec succes dans le repertoire : " + uploadPath);
+        
+                    response.sendRedirect(url);
                 }
-
-                System.out.println("ok");
-                response.getWriter().println("Fichier '" + fileName + "' uploade avec succes dans le repertoire : " + uploadPath);
+                catch(Exception e) {
+                    m.addObject("error", e.getMessage());
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -353,15 +365,17 @@ public class FrontController extends HttpServlet {
             }
             else if (methodType instanceof ModelAndView) {
                 m = (ModelAndView) methodType;
-    
+
+                // tsy ilaina tsony eto
                 for (HashMap.Entry<String, Object> data : m.getData().entrySet()) { 
                     String name = data.getKey();
                     Object value = data.getValue();
 
                     request.setAttribute(name, value);
                 }
-                json = gson.toJson(m.getData());
+                // katreto
                 
+                json = gson.toJson(m.getData());   
                 System.out.println(json);
             }
             else {
@@ -371,25 +385,41 @@ public class FrontController extends HttpServlet {
 
             if (usingApiRest) {
                 response.setContentType("text/json");
-                out.println(json);
+                out.println(json);  
             }
             else {
                 response.setContentType("text/html");
                 if (methodType instanceof String)  out.println("<p>" + string + "</p>");
                 else {
-                    RequestDispatcher dispatcher = request.getRequestDispatcher(m.getUrl());
-                    dispatcher.forward(request, response);
+                    request.getRequestDispatcher(m.getUrl()).forward(request, response);
+                    
+                    // m.removeToSession(request.getSession());
+                    // response.sendRedirect(m.getUrl());
                 }
             }
         }
         catch (ValidationException ve) {
             String[] splittedRequest = request.getHeader("referer").toString().split("/");
+            String url = splittedRequest[splittedRequest.length-1];
 
-            request.getSession().setAttribute("errors", ve.getErrors());
-            response.sendRedirect(splittedRequest[splittedRequest.length-1]);
+            ModelAndView m = new ModelAndView(url);
+            m.addObject("errors", ve.getErrors(), request.getSession());
+
+            response.sendRedirect(url);
+        }
+        catch (IllegalArgumentException illae) {
+            out.println("Error : Ne pas utiliser de variables primitives comme int, double,... Toujours utiliser des objets.");
+            out.println("StackTrace : "+illae.getStackTrace());
+            out.println(illae.getStackTrace().toString());
+            
+            System.out.println(illae.getMessage());
+            illae.printStackTrace();
         }
         catch (Exception e) {
-            out.println(e.getMessage());
+            out.println("Error : "+e.getMessage());
+            out.println("StackTrace : "+e.getStackTrace());
+            out.println(e.getStackTrace().toString());
+
             System.out.println(e.getMessage());
             e.printStackTrace();
         }

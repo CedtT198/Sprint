@@ -6,6 +6,8 @@ import util.MySession;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import com.thoughtworks.paranamer.AdaptiveParanamer;
@@ -17,7 +19,6 @@ import validation.Validation;
 import validation.exception.ValidationException;
 
 public class Mapper {
-
     public static Method findMethodInClass(Class<?> clazz, String methodName) {
         for (Method method : clazz.getMethods()) {
             if (method.getName().equals(methodName)) {
@@ -58,10 +59,12 @@ public class Mapper {
 
                 for (Field field : parameterType.getDeclaredFields()) {
                     String fieldName = field.getName();
-                    // System.out.println("Field name  : "+fieldName);
+                    System.out.println("Field name  : "+fieldName);
                     String paramName = parameterType.getSimpleName().toLowerCase() + "." + fieldName;
-                    // System.out.println("Param name  : "+paramName);
+                    System.out.println("Param name  : "+paramName);
                     String paramValue = request.getParameter(paramName);
+                    
+                    System.out.println(field.getName()+" : "+paramValue);
 
                     Object convertedValue = convertParameter(paramValue, field.getType());  
                     
@@ -165,6 +168,11 @@ public class Mapper {
         }
         else if (type == boolean.class || type == Boolean.class) {
             object = Boolean.parseBoolean(value);
+        }
+        else if (type == LocalDateTime.class) {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
+            LocalDateTime localDateTime = LocalDateTime.parse(value, formatter);
+            object = localDateTime;
         }
         return object;
     }
