@@ -1,12 +1,12 @@
 package mg.prom16.controller;
 
 import com.google.gson.Gson;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -54,17 +54,9 @@ public class FrontController extends HttpServlet {
             packageNames = config.getInitParameter("controllerPackage");
             packageNames.isEmpty();
             scanControllers(packageNames);
-        } catch (Exception e) {
-            StackTraceElement[] stackTrace = e.getStackTrace();
-            if (stackTrace.length > 0) {
-                StackTraceElement element = stackTrace[0];
-                String error = "ERROR : Package "+packageNames+" introuvable.\nFaute de nom, ou le package est non existant.\n";
-                error += "Sur la ligne : "+element.getLineNumber()+"\n";
-                error += "Dans la classe : "+element.getClassName()+"\n";
-                error += "Fonction : "+element.getMethodName();
-
-                errorList.add(error);
-            }
+        } catch (Exception e) {            
+            System.out.println(e.getMessage());
+            e.printStackTrace();
         }
     }
     
@@ -75,21 +67,21 @@ public class FrontController extends HttpServlet {
             URL resource = classLoader.getResource(path);
             Path classPath = Paths.get(resource.toURI());
             Files.walk(classPath)
-                    .filter(f -> f.toString().endsWith(".class"))
-                    .forEach(f -> {
-                        String className = packageName + "." + f.getFileName().toString().replace(".class", "");
-                        try {
-                            Class<?> clazz = Class.forName(className);
-                            if (clazz.isAnnotationPresent(Controller.class) && !Modifier.isAbstract(clazz.getModifiers()))
-                            {
-                                controllerNames.add(clazz.getSimpleName());
-                                this.getMethodInController(className);
-                            }
-                        } catch (Exception e) {
-                            System.out.println("OK1");
-                            e.printStackTrace();
+                .filter(f -> f.toString().endsWith(".class"))
+                .forEach(f -> {
+                    String className = packageName + "." + f.getFileName().toString().replace(".class", "");
+                    try {
+                        Class<?> clazz = Class.forName(className);
+                        if (clazz.isAnnotationPresent(Controller.class) && !Modifier.isAbstract(clazz.getModifiers()))
+                        {
+                            controllerNames.add(clazz.getSimpleName());
+                            this.getMethodInController(className);
                         }
-                    });
+                    } catch (Exception e) {
+                        System.out.println("OK1");
+                        e.printStackTrace();
+                    }
+                });
             if (controllerNames.size() < 0) {
                 String error = "ERROR : Classe(s) introuvable(s).\nAucun controller n'a été trouvé dans le package : '"+packageNames+"'. Ajouter vos controllers annoté de la classe AnnotationController.AnnotationController.";
                 errorList.add(error);
@@ -110,7 +102,8 @@ public class FrontController extends HttpServlet {
             //     }
             //     System.out.println("\n");
             // }   
-        } catch (Exception e) {
+        } catch (Exception e) {      
+            System.out.println(e.getMessage());
             e.printStackTrace();
         }
     }
@@ -129,7 +122,7 @@ public class FrontController extends HttpServlet {
                         String mname = methods[i].getAnnotation(Get.class).value();
                         String m2name = methods[j].getAnnotation(Get.class).value();
                         if (mname == m2name) {
-                            String error = "<strong>ERROR :</strong><p>Valeur des annotations similaires.</p><br>\n<p>@Get(value=\""+mname+"\") revient plusieurs fois. La valeur de l'annotation de chaque controller doit être unique.</p><br>";
+                            String error = "<strong>VERB ERROR :</strong><p>Valeur des annotations similaires.</p><br>\n<p>@Get(value=\""+mname+"\") revient plusieurs fois. La valeur de l'annotation de chaque controller doit être unique.</p><br>";
                             errorList.add(error);
                             break;
                         }
@@ -138,7 +131,7 @@ public class FrontController extends HttpServlet {
                         String mname = methods[i].getAnnotation(Post.class).value();
                         String m2name = methods[j].getAnnotation(Post.class).value();
                         if (mname == m2name) {
-                            String error = "<strong>ERROR :</strong><p>Valeur des annotations similaires.</p><br>\n<p>@Post(value=\""+mname+"\") revient plusieurs fois. La valeur de l'annotation de chaque controller doit être unique.</p><br>";
+                            String error = "<strong>VERB ERROR :</strong><p>Valeur des annotations similaires.</p><br>\n<p>@Post(value=\""+mname+"\") revient plusieurs fois. La valeur de l'annotation de chaque controller doit être unique.</p><br>";
                             errorList.add(error);
                             break;
                         }
@@ -146,12 +139,6 @@ public class FrontController extends HttpServlet {
                 }
             }
         }
-
-        // Affichage des methods
-        // System.out.println("Class : "+className);
-        // for (int i = 0; i < methods.length; i++) {
-        //     System.out.println("Method : "+methods[i].getName());
-        // }
 
         for (Method method : methods) {
             String methodName = method.getName();
@@ -181,7 +168,6 @@ public class FrontController extends HttpServlet {
             // String annotationValue = method.getName();
         }
     }
-
     
     private void processMapping(String methodName, String httpVerb, String annotationValue, HashMap<String, Mapping> urlMapping, String className) throws Exception {
         Mapping existingMapping = urlMapping.get(annotationValue);
@@ -204,27 +190,7 @@ public class FrontController extends HttpServlet {
     }
 
 
-    private void notFoundResponse(HttpServletResponse response) throws IOException {
-        response.setStatus(HttpServletResponse.SC_NOT_FOUND);
 
-        response.setContentType("text/html");
-        String htmlResponse = "<!DOCTYPE html>" +
-                "<html lang=\"en\">" +
-                    "<head>" +
-                        "<meta charset=\"UTF-8\">" +
-                        "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">" +
-                        "<title>404 - Not Found</title>" +
-                    "</head>" +
-                    "<body>" +
-                        "<h1>404 - Page Not Found</h1>" +
-                        "<p>Oops! La page que vous cherchez n'existe pas.</p>" +
-                    "</body>" +
-                "</html>";
-
-        response.getWriter().write(htmlResponse);
-    }               
-
-    
     protected void processRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         try {
             StringBuffer requestURL = request.getRequestURL();
@@ -240,7 +206,7 @@ public class FrontController extends HttpServlet {
                     processFileUpload(request, response);
                 }
                 else {
-                    notFoundResponse(response);
+                    notFoundResponse(request, response);
                     
                     // out.println("<p>Aucune méthode associe a ce chemin.</p>");
                     // RequestDispatcher dispatcher = request.getRequestDispatcher("login.jsp");
@@ -252,10 +218,7 @@ public class FrontController extends HttpServlet {
             }
 
             if (errorList.size() > 0) {
-                request.setAttribute("list_error", errorList);
-                errorList = new ArrayList<>();
-                RequestDispatcher dispatcher = request.getRequestDispatcher("error.jsp");
-                dispatcher.forward(request, response);
+                showError(request, response);
             }
         } catch (Exception e) {
             System.out.println(e.getMessage());
@@ -263,8 +226,14 @@ public class FrontController extends HttpServlet {
         }
     }
 
+    
+    private void notFoundResponse(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        RequestDispatcher dispatcher = request.getRequestDispatcher("notfound.jsp");
+        dispatcher.forward(request, response);
+    }               
 
-    protected void processFileUpload(HttpServletRequest request, HttpServletResponse response) throws IOException {
+
+    protected void processFileUpload(HttpServletRequest request, HttpServletResponse response) throws Exception {
         byte[] buffer = new byte[1024];
         int bytesRead;
 
@@ -311,8 +280,15 @@ public class FrontController extends HttpServlet {
                     response.sendRedirect(url);
                 }
                 catch(Exception e) {
-                    m.addObject("error", e.getMessage());
-                    e.printStackTrace();
+                    errorList.add(e.getMessage());
+                    for (StackTraceElement st : e.getStackTrace()) {
+                        errorList.add("Class : "+st.getClassName());
+                        errorList.add("Method : "+st.getMethodName());
+                        errorList.add("Filename : "+st.getFileName());
+                        errorList.add("Line number : "+st.getLineNumber());
+                        errorList.add("Stack trace : "+getStringStackTrace(e));
+                    }
+                    showError(request, response);
                 }
             }
         }
@@ -361,25 +337,23 @@ public class FrontController extends HttpServlet {
                 string = (String) methodType;
                 json = gson.toJson(string);
 
+                System.out.println("JSON :");
                 System.out.println(json);
             }
             else if (methodType instanceof ModelAndView) {
                 m = (ModelAndView) methodType;
 
-                // tsy ilaina tsony eto
                 for (HashMap.Entry<String, Object> data : m.getData().entrySet()) { 
                     String name = data.getKey();
                     Object value = data.getValue();
 
                     request.setAttribute(name, value);
                 }
-                // katreto
-                
                 json = gson.toJson(m.getData());   
                 System.out.println(json);
             }
             else {
-                String error = "ERROR : Type de retour non reconnu.\nLe type de retour d'une fonction doit obligatoirement etre de type java.lang.String ou modelandview.ModelAndView.";
+                String error = "Le type de retour d'une fonction doit obligatoirement etre de type java.lang.String ou modelandview.ModelAndView.";
                 errorList.add(error);
             }
 
@@ -399,29 +373,36 @@ public class FrontController extends HttpServlet {
             }
         }
         catch (ValidationException ve) {
-            String[] splittedRequest = request.getHeader("referer").toString().split("/");
-            String url = splittedRequest[splittedRequest.length-1];
+            // String[] splittedRequest = request.getHeader("referer").toString().split("/");
+            // String url = splittedRequest[splittedRequest.length-1];
 
-            ModelAndView m = new ModelAndView(url);
-            m.addObject("errors", ve.getErrors(), request.getSession());
+            // ModelAndView m = new ModelAndView(url);
+            // m.addObject("errors", ve.getErrors(), request.getSession());
 
-            response.sendRedirect(url);
+            // response.sendRedirect(url);
+            throw new ValidationException(ve.getErrors());
         }
         catch (IllegalArgumentException illae) {
-            out.println("Error : Ne pas utiliser de variables primitives comme int, double,... Toujours utiliser des objets.");
-            out.println("StackTrace : "+illae.getStackTrace());
-            out.println(illae.getStackTrace().toString());
-            
-            System.out.println(illae.getMessage());
-            illae.printStackTrace();
+            errorList.add("Ne pas utiliser de variables primitives (int, double, etc...). Toujours utiliser des objets.");
+            for (StackTraceElement st : illae.getStackTrace()) {
+                errorList.add("Class : "+st.getClassName());
+                errorList.add("Method : "+st.getMethodName());
+                errorList.add("Filename : "+st.getFileName());
+                errorList.add("Line number : "+st.getLineNumber());
+                errorList.add("Stack trace : "+getStringStackTrace(illae));
+            }
+            showError(request, response);
         }
         catch (Exception e) {
-            out.println("Error : "+e.getMessage());
-            out.println("StackTrace : "+e.getStackTrace());
-            out.println(e.getStackTrace().toString());
-
-            System.out.println(e.getMessage());
-            e.printStackTrace();
+            errorList.add("<h3>"+e.getMessage()+"</h3>");
+            for (StackTraceElement st : e.getStackTrace()) {
+                errorList.add("Class : "+st.getClassName());
+                errorList.add("Method : "+st.getMethodName());
+                errorList.add("Filename : "+st.getFileName());
+                errorList.add("Line number : "+st.getLineNumber());
+                errorList.add("Stack trace : "+getStringStackTrace(e));
+            }
+            showError(request, response);
         }
         finally {
             out.close();
@@ -449,6 +430,25 @@ public class FrontController extends HttpServlet {
         
         return result;
     }
+
+
+    public void showError(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        request.setAttribute("list_error", errorList);
+        errorList = new ArrayList<>();
+        RequestDispatcher dispatcher = request.getRequestDispatcher("error.jsp");
+        dispatcher.forward(request, response);
+    }
+
+
+    public String getStringStackTrace(Exception e) {
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            e.printStackTrace(pw);
+            String stackTrace = sw.toString();
+            return stackTrace;
+    }
+
+
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {

@@ -28,6 +28,7 @@ if exist "%destinationDir%\" (
 )
 
 copy "%projectPath%\error.jsp" "%destinationDir%\"
+copy "%projectPath%\notfound.jsp" "%destinationDir%\"
 copy "%projectPath%\lib\paranamer-2.8.jar" "%destinationDir%\lib\"
 
 rem supprimer le répertoire temporaire

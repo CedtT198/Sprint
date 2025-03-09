@@ -60,7 +60,7 @@ public class Mapper {
                 for (Field field : parameterType.getDeclaredFields()) {
                     String fieldName = field.getName();
                     System.out.println("Field name  : "+fieldName);
-                    String paramName = parameterType.getSimpleName().toLowerCase() + "." + fieldName;
+                    String paramName = parameterType.getSimpleName() + "." + fieldName;
                     System.out.println("Param name  : "+paramName);
                     String paramValue = request.getParameter(paramName);
                     
