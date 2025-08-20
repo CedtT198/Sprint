@@ -82,33 +82,34 @@ public class ModelAndView {
         this.data.put(key, value);
     }
 
-    public void addObject(String key, Object value, MySession session) {
-        this.data.put(key, value);
-        session.add(key, value);
+    // public void addObject(String key, Object value, MySession session) {
+    //     this.data.put(key, value);
+    //     session.add(key, value);
 
-        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+    //     ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
-        scheduler.schedule(() -> {
-            session.delete(key);
-            System.out.println("Attribut temporaire "+key+" supprimé après 3 secondes.");
-        }, 3, TimeUnit.SECONDS);
+    //     int delay = 5;
+    //     scheduler.schedule(() -> {
+    //         session.delete(key);
+    //         System.out.println("Attribut temporaire "+key+" supprimé après "+delay+" secondes.");
+    //     }, delay, TimeUnit.SECONDS);
 
-        scheduler.shutdown();
-    }
+    //     scheduler.shutdown();
+    // }
 
-    public void addObject(String key, Object value, HttpSession session) {
-        this.data.put(key, value);
-        session.setAttribute(key, value);
+    // public void addObject(String key, Object value, HttpSession session) {
+    //     this.data.put(key, value);
+    //     session.setAttribute(key, value);
 
-        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+    //     ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
-        scheduler.schedule(() -> {
-            session.removeAttribute(key);
-            System.out.println("Attribut temporaire "+key+" supprimé après 3 secondes.");
-        }, 3, TimeUnit.SECONDS);
+    //     scheduler.schedule(() -> {
+    //         session.removeAttribute(key);
+    //         System.out.println("Attribut temporaire "+key+" supprimé après 3 secondes.");
+    //     }, 3, TimeUnit.SECONDS);
 
-        scheduler.shutdown();
-    }
+    //     scheduler.shutdown();
+    // }
 
     public String getUrl() {
         return url;

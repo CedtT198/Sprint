@@ -4,18 +4,36 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Error</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Error Runtime Exception</title>
+<style>
+    body {
+        margin: 0;
+        padding: 25px;
+        color: white;
+        background-color: #e6394d;
+        font-family: Verdana, Geneva, Tahoma, sans-serif;
+    }
+    h1 {
+        font-size: 50px;
+        text-align: center;
+        font-weight: 100;
+    }
+    li {
+        font-size: 15px;
+    }
+</style>
 </head>
 <body>
-    <center>
-        <% List<String> liste_error = (List<String>) request.getAttribute("list_error");
-                for (String error : liste_error) { %>
-                    <div>
-                        <p><% out.println(error);%></p><br>
-                    </div>
-        <% } %>
-    </center>
+    <div class="container">
+        <h2>Error Exception</h2><br>
+        <ul>
+            <% List<String> errors = (List<String>) request.getAttribute("list_error");
+                for (String error : errors) { %>
+                    <li><% out.println(error);%></li><br><br>
+            <% } %>
+        </ul>
+    </div>
 </body>
 </html>

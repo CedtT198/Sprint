@@ -6,10 +6,12 @@ import util.MySession;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
+import javax.swing.text.DateFormatter;
 import com.thoughtworks.paranamer.AdaptiveParanamer;
 import com.thoughtworks.paranamer.Paranamer;
 import Annotation.RequestObject;
@@ -28,7 +30,7 @@ public class Mapper {
         return null;
     }
 
-    public static Object[] extractParameters(HttpServletRequest request, Method method) throws Exception {
+    public static Object[] extractParameters(HttpServletRequest request, Method method) throws ValidationException, Exception {
         Map<String, String> errors = new HashMap<>();
 
         Parameter[] parameters = method.getParameters();  
@@ -60,7 +62,7 @@ public class Mapper {
                 for (Field field : parameterType.getDeclaredFields()) {
                     String fieldName = field.getName();
                     System.out.println("Field name  : "+fieldName);
-                    String paramName = parameterType.getSimpleName().toLowerCase() + "." + fieldName;
+                    String paramName = parameterType.getSimpleName() + "." + fieldName;
                     System.out.println("Param name  : "+paramName);
                     String paramValue = request.getParameter(paramName);
                     
@@ -88,7 +90,7 @@ public class Mapper {
                     args[i] = mySession;
                 }
                 else {
-                    throw new Exception("Touts les arguments d'une méthode doivent être annoté de Annotation.RequestParam ou doivent être de type util.MySession si non annoté.");
+                    throw new Exception("Tous les arguments d'une méthode doivent être annoté de Annotation.RequestParam ou doivent être de type util.MySession si non annoté.");
                 }
                 // String paramName = parameterNames[i];
                 // System.out.println(paramName);
@@ -168,6 +170,12 @@ public class Mapper {
         }
         else if (type == boolean.class || type == Boolean.class) {
             object = Boolean.parseBoolean(value);
+        }
+        else if (type == LocalDate.class) {
+            // DateFormatter formatter = DateFormatter.ofPattern("yyyy-MM-dd");
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            LocalDate localDate = LocalDate.parse(value, formatter);
+            object = localDate;
         }
         else if (type == LocalDateTime.class) {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");

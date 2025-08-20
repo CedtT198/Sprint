@@ -11,13 +11,17 @@
 
 # Comment utiliser le framework ?
 
-<p style="color:red">UTILISER TOUJOURS DES OBJETS DANS LES VOS MODELS, SURTOUT PAS DE VARIABLES PRIMITIVES</p>
+<p style="color:red">
+        <h3>Restriction : </h3>
+        - Toujours utiliser des objects (Integer, Double, Boolean, ....),  SURTOUT PAS de variables primitives (int, double, boolean).
+</p>
 
 - Il faut que l'utilisateur annote ses controllers de l'annotation "Annotation.Controller" et les méthodes de ces controllers de l'annotation 'Get' ou 'Post' avec une valeur unique pour chaque méthode
-- Toutes les fonctions annotées de @Controller doivent doivent avoir le type de retour "modelandview.ModelAndView" 
+- Toutes les fonctions annotées de @Controller doivent avoir le type de retour "modelandview.ModelAndView" 
 - Pour les passages de données via un formulaire, vous avez 2 choix :
     - Annoter les paramètres des méthodes de l'annotation "Annotation.RequestParam"
     - Mettre un objet en paramètre des méthodes et annoter cette derniere de "Annotation.RequestObject"
+        - Sur les inputs, on ecrit le nom de la classe de l'object en PascalCase (ex: ObjectName.attributeName)
 - Pour l'utilisation de Session, ajouter util.MySession aux paramètres de la méthode des controllers
 - Pour les validations et gestion d'erreur de formulaire :
     - Annoter les attributs des Models avec les annotations dans package "validation.annotation"

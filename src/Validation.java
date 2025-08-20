@@ -22,9 +22,10 @@ public class Validation {
                 // Vérifie si nombre input inférieure à minimum
                 if (field.isAnnotationPresent(Min.class)) {
                     Min minAnnotation = field.getAnnotation(Min.class);
+                    int min = minAnnotation.value();
                     Object value = field.get(object);
-                    int intValue = castToInteger(value);
-                    if (intValue < minAnnotation.value()) { 
+                    int intValue = castToInteger(min, value);
+                    if (intValue < min) { 
                         System.out.println("Contrainte Minimum");
                         System.out.println(field.getName()+" : "+value);
                         errors.put(field.getName(), minAnnotation.message());
@@ -37,9 +38,10 @@ public class Validation {
                 // Vérifie si nombre input supérieure à maximum
                 if (field.isAnnotationPresent(Max.class)) {
                     Max maxAnnotation = field.getAnnotation(Max.class);
+                    int max = maxAnnotation.value();
                     Object value = field.get(object);
-                    int intValue = castToInteger(value);
-                    if (intValue > maxAnnotation.value()) { 
+                    int intValue = castToInteger(max, value);
+                    if (intValue > max) { 
                         System.out.println("Contrainte Maximum");
                         System.out.println(field.getName()+" : "+value);
                         errors.put(field.getName(), maxAnnotation.message());
@@ -99,8 +101,10 @@ public class Validation {
     //     errors.computeIfAbsent(fieldName, key -> new ArrayList<>()).add(message);
     // }
 
-    public static int castToInteger(Object numeric) {
-        int response = 0;
+    // Si Object numeric est null, on renverra la valeur de l'annotation
+    // Ce qui permettra d'annoter un attribut nullable avec Min / Max 
+    public static int castToInteger(Integer annotationValue, Object numeric) {
+        int response = annotationValue;
         if (numeric instanceof Integer) {
             response = (Integer) numeric;
         }
