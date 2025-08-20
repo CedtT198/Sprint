@@ -21,7 +21,7 @@
         text-align:center;
     }
     h1 {
-        font-size: 75px;
+        font-size: 74px;
     }
     p {
         font-size: 18px;
@@ -31,7 +31,7 @@
 <body>
     <div class="container">
         <h1>404 - Not Found</h1>
-        <p>Oops! La ressource ou la page demandee est introuvable.</p>
+        <p>Oops! Ressoure introuvable.</p>
     </div>
 </body>
 </html>

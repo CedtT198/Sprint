@@ -27,11 +27,11 @@
 </head>
 <body>
     <div class="container">
-        <h1>Error Runtime Exception</h1><br>
+        <h2>Error Exception</h2><br>
         <ul>
             <% List<String> errors = (List<String>) request.getAttribute("list_error");
                 for (String error : errors) { %>
-                    <li><% out.println(error);%></li><br>
+                    <li><% out.println(error);%></li><br><br>
             <% } %>
         </ul>
     </div>

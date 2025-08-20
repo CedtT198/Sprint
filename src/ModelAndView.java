@@ -88,10 +88,11 @@ public class ModelAndView {
 
     //     ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
+    //     int delay = 5;
     //     scheduler.schedule(() -> {
     //         session.delete(key);
-    //         System.out.println("Attribut temporaire "+key+" supprimé après 3 secondes.");
-    //     }, 3, TimeUnit.SECONDS);
+    //         System.out.println("Attribut temporaire "+key+" supprimé après "+delay+" secondes.");
+    //     }, delay, TimeUnit.SECONDS);
 
     //     scheduler.shutdown();
     // }

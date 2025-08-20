@@ -5,7 +5,7 @@ set "projectPath=."
 set "tempPath=temp"
 set "jarFile=spring-ced.jar"
 @REM set "destinationDir=C:\ITU\S5\Framework\Test sprint"
-set "destinationDir=C:\ITU\S5\Framework\Temoin\ticketing"
+set "destinationDir=E:\ITU\S5\Framework\Temoin\ticketing"
 
 mkdir temp
 @REM 8

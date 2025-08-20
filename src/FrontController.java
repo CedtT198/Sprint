@@ -1,6 +1,7 @@
 package mg.prom16.controller;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
@@ -10,6 +11,7 @@ import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -35,6 +37,7 @@ import Annotation.Post;
 import Annotation.Controller;
 import Annotation.Restapi;
 import mapping.Mapping;
+import util.LocalDateTimeAdapter;
 import util.Mapper;
 import util.ModelAndView;
 import util.VerbAction;
@@ -78,13 +81,12 @@ public class FrontController extends HttpServlet {
                             this.getMethodInController(className);
                         }
                     } catch (Exception e) {
-                        System.out.println("OK1");
+                        System.out.println(e.getMessage());
                         e.printStackTrace();
                     }
                 });
             if (controllerNames.size() < 0) {
-                String error = "ERROR : Classe(s) introuvable(s).\nAucun controller n'a été trouvé dans le package : '"+packageNames+"'. Ajouter vos controllers annoté de la classe AnnotationController.AnnotationController.";
-                errorList.add(error);
+                errorList.add("ERROR : Classe(s) introuvable(s).\nAucun controller n'a été trouvé dans le package : '"+packageNames+"'. Ajouter vos controllers annoté de la classe AnnotationController.AnnotationController.");;
             }
             
             // Affichage urlMapping
@@ -110,6 +112,11 @@ public class FrontController extends HttpServlet {
 
     public void getMethodInController(String className) throws Exception {
         Class<?> clazz = Class.forName(className);
+        Annotation classAnnotation = clazz.getAnnotation(Controller.class);
+        String controllerName = "";
+        // if (classAnnotation != null)  controllerName = classAnnotation.value();
+        // else La classe est un model ou service
+        
         Method[] methods = clazz.getDeclaredMethods();
 
         for (int i=0; i < methods.length; i++) {
@@ -143,8 +150,8 @@ public class FrontController extends HttpServlet {
         for (Method method : methods) {
             String methodName = method.getName();
             
-            System.out.println(className);
-            System.out.println(methodName);
+            // System.out.println(className);
+            // System.out.println(methodName);
 
             if (method.isAnnotationPresent(Get.class)) {
                 Get annotation = method.getAnnotation(Get.class);
@@ -218,11 +225,11 @@ public class FrontController extends HttpServlet {
             }
 
             if (errorList.size() > 0) {
-                showError(request, response);
+                showError(null, request, response);
             }
         } catch (Exception e) {
-            System.out.println(e.getMessage());
-            e.printStackTrace();
+            errorList.add("<strong>"+e.getMessage()+"</strong>");
+            showError(e, request, response);
         }
     }
 
@@ -281,14 +288,7 @@ public class FrontController extends HttpServlet {
                 }
                 catch(Exception e) {
                     errorList.add(e.getMessage());
-                    for (StackTraceElement st : e.getStackTrace()) {
-                        errorList.add("Class : "+st.getClassName());
-                        errorList.add("Method : "+st.getMethodName());
-                        errorList.add("Filename : "+st.getFileName());
-                        errorList.add("Line number : "+st.getLineNumber());
-                        errorList.add("Stack trace : "+getStringStackTrace(e));
-                    }
-                    showError(request, response);
+                    showError(e, request, response);
                 }
             }
         }
@@ -330,7 +330,10 @@ public class FrontController extends HttpServlet {
             String string = "";
             ModelAndView m = null;
     
-            Gson gson = new Gson();
+            // Gson gson = new Gson();
+            Gson gson = new GsonBuilder().
+                            registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter()).
+                            create();
             String json = "";
 
             if (methodType instanceof String) {
@@ -346,6 +349,7 @@ public class FrontController extends HttpServlet {
                 for (HashMap.Entry<String, Object> data : m.getData().entrySet()) { 
                     String name = data.getKey();
                     Object value = data.getValue();
+                    System.out.println(name+" => "+value);
 
                     request.setAttribute(name, value);
                 }
@@ -353,8 +357,7 @@ public class FrontController extends HttpServlet {
                 System.out.println(json);
             }
             else {
-                String error = "Le type de retour d'une fonction doit obligatoirement etre de type java.lang.String ou modelandview.ModelAndView.";
-                errorList.add(error);
+                errorList.add("Le type de retour d'une fonction doit obligatoirement etre de type java.lang.String ou modelandview.ModelAndView.");
             }
 
             if (usingApiRest) {
@@ -373,36 +376,25 @@ public class FrontController extends HttpServlet {
             }
         }
         catch (ValidationException ve) {
+            // System.out.println("Les messages d\'erreur de validation sont dans une attribut=\'error\', utiliser la dans votre page html pour l\'afficher.");
+            // System.out.println("Error = "+ve.getErrors().toString());
+
             // String[] splittedRequest = request.getHeader("referer").toString().split("/");
             // String url = splittedRequest[splittedRequest.length-1];
 
             // ModelAndView m = new ModelAndView(url);
-            // m.addObject("errors", ve.getErrors(), request.getSession());
-
+            // m.addObject("error", ve.getErrors().toString(), request.getSession());
             // response.sendRedirect(url);
+
             throw new ValidationException(ve.getErrors());
         }
         catch (IllegalArgumentException illae) {
-            errorList.add("Ne pas utiliser de variables primitives (int, double, etc...). Toujours utiliser des objets.");
-            for (StackTraceElement st : illae.getStackTrace()) {
-                errorList.add("Class : "+st.getClassName());
-                errorList.add("Method : "+st.getMethodName());
-                errorList.add("Filename : "+st.getFileName());
-                errorList.add("Line number : "+st.getLineNumber());
-                errorList.add("Stack trace : "+getStringStackTrace(illae));
-            }
-            showError(request, response);
+            errorList.add("<strong>Ne pas utiliser de variables primitives (int, double, etc...). Toujours utiliser des objets.</strong>");
+            showError(illae, request, response);
         }
         catch (Exception e) {
-            errorList.add("<h3>"+e.getMessage()+"</h3>");
-            for (StackTraceElement st : e.getStackTrace()) {
-                errorList.add("Class : "+st.getClassName());
-                errorList.add("Method : "+st.getMethodName());
-                errorList.add("Filename : "+st.getFileName());
-                errorList.add("Line number : "+st.getLineNumber());
-                errorList.add("Stack trace : "+getStringStackTrace(e));
-            }
-            showError(request, response);
+            errorList.add("<strong>"+e.getMessage()+"</strong>");
+            showError(e, request, response);
         }
         finally {
             out.close();
@@ -432,20 +424,41 @@ public class FrontController extends HttpServlet {
     }
 
 
-    public void showError(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        request.setAttribute("list_error", errorList);
-        errorList = new ArrayList<>();
-        RequestDispatcher dispatcher = request.getRequestDispatcher("error.jsp");
-        dispatcher.forward(request, response);
+    public void showError(Exception e, HttpServletRequest request, HttpServletResponse response) {
+            try {
+                
+            if (e != null) {
+                for (StackTraceElement st : e.getStackTrace()) {
+                    String er = "";
+
+                    er += "<strong>Stacktrace: </strong>"+getStringStackTrace(e)+"<br>";
+                    er += "<strong>Filename: </strong>"+st.getFileName()+"<br>";
+                    er += "<strong>Class: </strong>"+st.getClassName()+"<br>";
+                    er += "<strong>Method: </strong>"+st.getMethodName()+"<br>";
+                    er += "<strong>Line number: </strong>"+st.getLineNumber()+"<br>";
+
+                    errorList.add(er);
+                }
+            }
+
+            request.setAttribute("list_error", errorList);
+            errorList = new ArrayList<>();
+
+            RequestDispatcher dispatcher = request.getRequestDispatcher("error.jsp");
+            dispatcher.forward(request, response);
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
+            ex.printStackTrace();
+        }
     }
 
 
     public String getStringStackTrace(Exception e) {
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            e.printStackTrace(pw);
-            String stackTrace = sw.toString();
-            return stackTrace;
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        e.printStackTrace(pw);
+        String stackTrace = sw.toString();
+        return stackTrace;
     }
 
 
